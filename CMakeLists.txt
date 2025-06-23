@@ -12,9 +12,11 @@ project(
   DESCRIPTION "A chocolatey sweet GameBoy emulator"
   LANGUAGES CXX C)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(WARNINGS_AS_ERRORS "Treat most build warnings generated as errors" OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(cmake/InSourceCheck.cmake)
 include(cmake/CompilerFlags.cmake)
+include(cmake/ClangTidy.cmake)
 include(cmake/Doxygen.cmake)

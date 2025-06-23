@@ -22,4 +22,3 @@ if(ENABLE_DOXYGEN)
     message(FATAL_ERROR "Doxygen not found")
   endif()
 endif()
-
