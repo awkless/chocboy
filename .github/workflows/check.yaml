@@ -1,0 +1,85 @@
+# SPDX-FileCopyrightText: 2025 Jason Pena <jasonpena@awkless.com>
+# SPDX-License-Identifier: CC0-1.0
+
+name: Quality Check
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: ubuntu-latest-gcc
+            os: ubuntu-latest
+            compiler: gcc
+            sudo: true
+          - name: macos-latest-clang
+            os: macos-latest
+            compiler: clang
+            sudo: true
+          - name: windows-latest-msvc
+            os: windows-latest
+            compiler: msvc
+            sudo: false
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache Build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ./build/
+            ${{ env.CONAN_USER_HOME }}
+            ~/.cache/ccache
+            ~/.cache
+            ~/.config/ccache
+            ~/Library/Caches/ccache
+            ${{ env.LOCALAPPDATA }}/ccache
+            ${{ env.XDG_CACHE_HOME }}/ccache
+          key: ${{ runner.os }}-${{ matrix.compiler }}-${{ env.BUILD_TYPE }}-${{ hashFiles('**/CMakeLists.txt', './conanfile.py') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.BUILD_TYPE }}-
+      - name: Setup CPP
+        uses: aminya/setup-cpp@v1
+        with:
+          compiler: "${{ matrix.compiler }}"
+          vcvarsall: "${{ contains(matrix.os, 'windows') }}"
+          cmake: true
+          ninja: true
+          vcpkg: false
+          ccache: true
+          cppcheck: true
+          clangtidy: true
+          conan: "2.17.0"
+
+      - name: Setup Conan Profile
+        run: conan profile detect --force
+
+      - name: Manage Dependencies
+        run: >
+          conan install .
+          --build=missing
+          -s build_type=Debug
+          -c tools.cmake.cmaketoolchain:generator=Ninja
+          -c tools.system.package_manager:mode=install
+          -c tools.system.package_manager:sudo=${{ matrix.sudo }}
+          -s compiler.cppstd=17
+
+      - name: Configure CMake
+        run: >
+          cmake -G Ninja --preset conan-debug
+          -DWARNINGS_AS_ERRORS=ON
+          -DENABLE_TESTS=ON
+          -DENABLE_CLANG_TIDY=ON
+
+      - name: Build COCOBOY
+        run: cmake --build --preset conan-debug
+
+      - name: Run Tests
+        if: runner.os != 'Windows'
+        working-directory: ./build
+        run: ctest --test-dir Debug
