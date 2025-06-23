@@ -12,5 +12,8 @@ project(
   DESCRIPTION "A chocolatey sweet GameBoy emulator"
   LANGUAGES CXX C)
 
+option(WARNINGS_AS_ERRORS "Treat most build warnings generated as errors" OFF)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(cmake/InSourceCheck.cmake)
+include(cmake/CompilerFlags.cmake)
