@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2023 Jason Pena <jasonpena@awkless.com>
+# SPDX-License-Identifier: CC0-1.0
+
+* text=auto
+
+.clang-format text
+.clang-tidy   text
+.cmake-format text
+.giattributes text
+.gitignore    text
+*.md          text diff=markdown
+*.css         text diff=css
+*.cmake       text diff=cmake
+*.txt         text
+*.cpp         text diff=cpp
+*.hpp         text diff=cpp
+*.in          text
+*.html        text diff=html
+*.js          text diff=javascript
+*.png         binary
+*.svg         binary
+*.jpg         binary
+*.jpeg        binary
+*.yaml        text diff=yaml
