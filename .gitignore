@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: 2023 Jason Pena <jasonpena@awkless.com>
+# SPDX-License-Identifier: CC0-1.0
+
+/build
+CMakeUserPresets.json
+imgui.ini
