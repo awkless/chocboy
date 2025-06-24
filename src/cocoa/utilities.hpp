@@ -40,6 +40,27 @@ constexpr void clear_bit(T& var)
     static_assert(std::is_unsigned<T>::value == true, "type is not an unsigned type");
     var &= static_cast<T>(~(T(1) << Position)); 
 }
+
+/// @brief Toggle target bit based on condition.
+///
+/// If condition is true, then bit will be set. Otherwise, bit will be cleared.
+///
+/// @pre Given variable must be an unsigned integral type.
+/// @pre Position must range between [0, n), where _n_ is the total number of bits
+///      available in target variable.
+///
+/// @param [in,out] var Target variable to conditionally toggle bit inside of.
+template<typename T, size_t Position>
+constexpr void conditional_bit_toggle(T& var, bool condition)
+{
+    static_assert(Position < std::numeric_limits<T>::digits, "position exceeds maximum bit range");
+    static_assert(std::is_integral<T>::value == true, "type is not an integral type");
+    static_assert(std::is_unsigned<T>::value == true, "type is not an unsigned type");
+    if (condition == true)
+        set_bit<T, Position>(var);
+    else
+        clear_bit<T, Position>(var);
+}
 } // namespace cocoa
 
 #endif // COCOA_UTILITIES_HPP
