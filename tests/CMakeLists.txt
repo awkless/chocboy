@@ -2,9 +2,10 @@
 # SPDX-License-Identifier: MIT
 
 add_executable(unit_tests)
-target_sources(unit_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit_example.cpp")
+target_sources(unit_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit_utilities.cpp")
 target_link_libraries(unit_tests
-  PRIVATE chocboy::dependencies
+  PRIVATE cocoa::cocoa
+          chocboy::dependencies
           chocboy::cppstd_flags
           chocboy::warning_flags
           Catch2::Catch2WithMain)

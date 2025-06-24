@@ -4,7 +4,8 @@
 add_executable(chocboy)
 target_sources(chocboy  PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
 target_link_libraries(chocboy
-  PRIVATE chocboy::dependencies
+  PRIVATE cocoa::cocoa
+          chocboy::dependencies
           chocboy::cppstd_flags
           chocboy::warning_flags)
 set_target_properties(chocboy
