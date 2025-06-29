@@ -4,6 +4,7 @@
 #ifndef COCOA_UTILITIES_HPP
 #define COCOA_UTILITIES_HPP
 
+#include <cstdint>
 #include <cstddef>
 #include <limits>
 #include <type_traits>
@@ -60,6 +61,16 @@ constexpr void conditional_bit_toggle(T& var, bool condition)
         set_bit<T, Position>(var);
     else
         clear_bit<T, Position>(var);
+}
+
+/// @brief Convert enum into integral type.
+///
+/// @param [in] value Member of enum to convert.
+/// @return Member of enum converted to target type.
+template <typename T = int>
+constexpr typename std::underlying_type<T>::type from_enum(T value)
+{
+    return static_cast<typename std::underlying_type<T>::type>(value);
 }
 } // namespace cocoa
 
