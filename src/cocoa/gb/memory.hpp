@@ -58,14 +58,14 @@ public:
     ~MemoryBus() noexcept = default;
 
     [[nodiscard]]
-    uint8_t read_u8(uint16_t address) const;
+    uint8_t read_u8(const uint16_t address) const;
 
     [[nodiscard]]
-    uint16_t read_u16(uint16_t address) const;
+    uint16_t read_u16(const uint16_t address) const;
 
-    void write_u8(uint16_t address, uint8_t value);
+    void write_u8(const uint16_t address, const uint8_t value);
 
-    void write_u16(uint16_t address, uint16_t value);
+    void write_u16(const uint16_t address, const uint16_t value);
 
 private:
     std::array<uint8_t, MEMORY_BUS_SIZE> m_bus;
