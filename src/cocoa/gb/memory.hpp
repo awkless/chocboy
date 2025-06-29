@@ -60,6 +60,9 @@ public:
     [[nodiscard]]
     uint8_t read_u8(uint16_t address) const;
 
+    [[nodiscard]]
+    uint16_t read_u16(uint16_t address) const;
+
     void write_u8(uint16_t address, uint8_t value);
 
 private:
