@@ -57,6 +57,8 @@ public:
 
     ~MemoryBus() noexcept = default;
 
+    uint8_t read_u8(uint16_t address) const;
+
 private:
     std::array<uint8_t, MEMORY_BUS_SIZE> m_bus;
 };
