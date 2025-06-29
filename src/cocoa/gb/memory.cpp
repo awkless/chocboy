@@ -13,11 +13,17 @@ uint8_t MemoryBus::read_u8(uint16_t address) const
 
 uint16_t MemoryBus::read_u16(uint16_t address) const
 {
-    return static_cast<uint16_t>((m_bus[address] << 8) | m_bus[address + 1]);
+    return static_cast<uint16_t>((read_u8(address) << 8) | read_u8(address + 1));
 }
 
 void MemoryBus::write_u8(uint16_t address, uint8_t value)
 {
     m_bus[address] = value;
+}
+
+void MemoryBus::write_u16(uint16_t address, uint16_t value)
+{
+    write_u8(address, static_cast<uint8_t>(value >> 8));
+    write_u8(address + 1, static_cast<uint8_t>(value & 0xFF));
 }
 } // namespace cocoa::gb
