@@ -4,8 +4,8 @@
 #ifndef COCOA_UTILITIES_HPP
 #define COCOA_UTILITIES_HPP
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <type_traits>
 
@@ -71,6 +71,22 @@ template <typename T = int>
 constexpr typename std::underlying_type<T>::type from_enum(T value)
 {
     return static_cast<typename std::underlying_type<T>::type>(value);
+}
+
+/// @brief Obtain full type from a pair of smaller types.
+///
+/// @pre The sum of variable pair bits must equal the total number of bits of target type.
+///
+/// @param [in] high Variable of pair acting as high bits.
+/// @param [in] low Variable of pair acting as low bits.
+/// @return New type composed of variable pair merged together.
+template <typename T = uint16_t, typename V = uint8_t>
+constexpr T from_pair(V high, V low)
+{
+    static_assert(std::numeric_limits<V>::digits * 2 == std::numeric_limits<T>::digits,
+        "total bits of pair exceeds bit range of target return type");
+    constexpr unsigned int shift = std::numeric_limits<T>::digits / 2;
+    return static_cast<T>((high << shift) | low);
 }
 } // namespace cocoa
 
