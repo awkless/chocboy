@@ -88,6 +88,29 @@ constexpr T from_pair(V high, V low)
     constexpr unsigned int shift = std::numeric_limits<T>::digits / 2;
     return static_cast<T>((high << shift) | low);
 }
+
+/// @brief Get high bits of value.
+///
+/// @param [in] value Value to extract high bits from.
+/// @return High bits of value.
+template <typename T = uint8_t, typename V = uint16_t>
+constexpr T from_high(V value)
+{
+    constexpr unsigned int shift = std::numeric_limits<V>::digits / 2;
+    return static_cast<T>(value >> shift);
+}
+
+/// @brief Get low bits of value.
+///
+/// @param [in] value Value to extract low bits from.
+/// @return Low bits of value.
+template <typename T = uint8_t, typename V = uint16_t>
+constexpr T from_low(V value)
+{
+    constexpr unsigned int shift = std::numeric_limits<T>::digits;
+    constexpr V mask = (V(1) << shift) - V(1);
+    return static_cast<T>(value & mask);
+}
 } // namespace cocoa
 
 #endif // COCOA_UTILITIES_HPP

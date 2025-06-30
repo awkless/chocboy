@@ -32,3 +32,21 @@ TEST_CASE("constexpr void cocoa::conditional_bit_toggle(T&)", "[conditional_bit_
     cocoa::conditional_bit_toggle<uint8_t, 5>(data, false);
     REQUIRE(data == 0b00000001);
 }
+
+TEST_CASE("constexpr T from_high(V)", "[from_high]")
+{
+    uint8_t expect1 = cocoa::from_high<uint8_t, uint16_t>(0xBEEF);
+    REQUIRE(expect1 == 0xBE);
+
+    uint16_t expect2 = cocoa::from_high<uint16_t, uint32_t>(0xDEADBEEF);
+    REQUIRE(expect2 == 0xDEAD);
+}
+
+TEST_CASE("constexpr T from_low(V)", "[from_low]")
+{
+    uint8_t expect1 = cocoa::from_low<uint8_t, uint16_t>(0xBEEF);
+    REQUIRE(expect1 == 0xEF);
+
+    uint16_t expect2 = cocoa::from_low<uint16_t, uint32_t>(0xDEADBEEF);
+    REQUIRE(expect2 == 0xBEEF);
+}
