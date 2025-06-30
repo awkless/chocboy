@@ -5,11 +5,199 @@
 #define COCOA_GB_CPU_HPP
 
 #include <cstdint>
+#include <exception>
+#include <string>
+#include <memory>
+
+#include <spdlog/logger.h>
 
 #include "cocoa/gb/memory.hpp"
 #include "cocoa/utilities.hpp"
 
 namespace cocoa::gb {
+enum class RegIndex {
+    A = 0,
+    F = 1,
+    B = 2,
+    C = 3,
+    D = 4,
+    E = 5,
+    H = 6,
+    L = 7,
+};
+
+enum class Reg8 {
+    B = 0,
+    C = 1,
+    D = 2,
+    E = 3,
+    H = 4,
+    L = 5,
+    HL = 6,
+    A = 7,
+};
+
+enum class Reg16 {
+    BC = 0,
+    DE = 1,
+    HL = 2,
+    SP = 3,
+};
+
+enum class Reg16Stk {
+    BC = 0,
+    DE = 1,
+    HL = 2,
+    AF = 3,
+};
+
+enum class Reg16Mem {
+    BC = 0,
+    DE = 1,
+    HLI = 2,
+    HLD = 3,
+};
+
+enum class Flag {
+    Z = 7,
+    N = 6,
+    H = 5,
+    C = 4,
+};
+
+struct Sm83State final {
+    size_t cycles;
+    uint16_t sp;
+    uint16_t pc;
+    std::array<uint8_t, 8> regs;
+    MemoryBus& bus;
+
+    explicit Sm83State(MemoryBus& memory);
+
+    template <enum Reg16 REG16>
+    constexpr uint16_t get_reg16() const
+    {
+        if constexpr (REG16 == Reg16::BC) {
+            return cocoa::from_pair<uint16_t, uint8_t>(
+                regs[cocoa::from_enum(RegIndex::B)], regs[cocoa::from_enum(RegIndex::C)]);
+        }
+
+        if constexpr (REG16 == Reg16::DE) {
+            return cocoa::from_pair<uint16_t, uint8_t>(
+                regs[cocoa::from_enum(RegIndex::D)], regs[cocoa::from_enum(RegIndex::E)]);
+        }
+
+        if constexpr (REG16 == Reg16::HL) {
+            return cocoa::from_pair<uint16_t, uint8_t>(
+                regs[cocoa::from_enum(RegIndex::H)], regs[cocoa::from_enum(RegIndex::L)]);
+        }
+
+        if constexpr (REG16 == Reg16::SP)
+            return sp;
+    }
+
+    template <enum Reg16 REG16>
+    constexpr void set_reg16(uint16_t value)
+    {
+        if constexpr (REG16 == Reg16::BC) {
+            regs[cocoa::from_enum(RegIndex::B)] = cocoa::from_high(value);
+            regs[cocoa::from_enum(RegIndex::C)] = cocoa::from_low(value);
+        }
+
+        if constexpr (REG16 == Reg16::DE) {
+            regs[cocoa::from_enum(RegIndex::D)] = cocoa::from_high(value);
+            regs[cocoa::from_enum(RegIndex::E)] = cocoa::from_low(value);
+        }
+
+        if constexpr (REG16 == Reg16::HL) {
+            regs[cocoa::from_enum(RegIndex::H)] = cocoa::from_high(value);
+            regs[cocoa::from_enum(RegIndex::L)] = cocoa::from_low(value);
+        }
+
+        if constexpr (REG16 == Reg16::SP) {
+            sp = value;
+        }
+    }
+
+    template <enum Reg16Stk REG16_STK>
+    constexpr uint16_t get_reg16_stk() const
+    {
+        if constexpr (REG16_STK == Reg16Stk::BC)
+            return get_reg16<Reg16::BC>();
+
+        if constexpr (REG16_STK == Reg16Stk::DE)
+            return get_reg16<Reg16::DE>();
+
+        if constexpr (REG16_STK == Reg16Stk::HL)
+            return get_reg16<Reg16::HL>();
+
+        if constexpr (REG16_STK == Reg16Stk::AF) {
+            return cocoa::from_pair<uint16_t, uint8_t>(
+                regs[cocoa::from_enum(RegIndex::A)], regs[cocoa::from_enum(RegIndex::F)]);
+        }
+    }
+
+    template <enum Reg16Stk REG16_STK>
+    constexpr void set_reg16_stk(uint16_t value)
+    {
+        if constexpr (REG16_STK == Reg16Stk::BC)
+            set_reg16<Reg16::BC>(value);
+
+        if constexpr (REG16_STK == Reg16Stk::DE)
+            set_reg16<Reg16::DE>(value);
+
+        if constexpr (REG16_STK == Reg16Stk::HL)
+            set_reg16<Reg16::HL>(value);
+
+        if constexpr (REG16_STK == Reg16Stk::AF) {
+            regs[cocoa::from_enum(RegIndex::A)] = cocoa::from_high(value);
+            regs[cocoa::from_enum(RegIndex::F)] = cocoa::from_low(value);
+        }
+    }
+
+    template <enum Reg8 REG8>
+    constexpr uint8_t get_reg8() const
+    {
+        if constexpr (REG8 == Reg8::B)
+            return regs[cocoa::from_enum(RegIndex::B)];
+        if constexpr (REG8 == Reg8::C)
+            return regs[cocoa::from_enum(RegIndex::C)];
+        if constexpr (REG8 == Reg8::D)
+            return regs[cocoa::from_enum(RegIndex::D)];
+        if constexpr (REG8 == Reg8::E)
+            return regs[cocoa::from_enum(RegIndex::E)];
+        if constexpr (REG8 == Reg8::H)
+            return regs[cocoa::from_enum(RegIndex::H)];
+        if constexpr (REG8 == Reg8::L)
+            return regs[cocoa::from_enum(RegIndex::L)];
+        if constexpr (REG8 == Reg8::HL)
+            return bus.read_u8(get_reg16<Reg16::HL>());
+        if constexpr (REG8 == Reg8::A)
+            return regs[cocoa::from_enum(RegIndex::A)];
+    }
+
+    template <enum Reg8 REG8>
+    constexpr void set_reg8(uint8_t value)
+    {
+        if constexpr (REG8 == Reg8::B)
+             regs[cocoa::from_enum(RegIndex::B)] = value;
+        if constexpr (REG8 == Reg8::C)
+             regs[cocoa::from_enum(RegIndex::C)] = value;
+        if constexpr (REG8 == Reg8::D)
+             regs[cocoa::from_enum(RegIndex::D)] = value;
+        if constexpr (REG8 == Reg8::E)
+             regs[cocoa::from_enum(RegIndex::E)] = value;
+        if constexpr (REG8 == Reg8::H)
+             regs[cocoa::from_enum(RegIndex::H)] = value;
+        if constexpr (REG8 == Reg8::L)
+             regs[cocoa::from_enum(RegIndex::L)] = value;
+        if constexpr (REG8 == Reg8::HL)
+             bus.write_u8(get_reg16<Reg16::HL>(), value);
+        if constexpr (REG8 == Reg8::A)
+             regs[cocoa::from_enum(RegIndex::A)] = value;
+    }
+};
+
 /// @brief SM83 CPU implementation.
 ///
 /// The GameBoy uses an 8-bit CPU architecture often referred to as the _SM83_. This CPU is a unique
@@ -30,87 +218,27 @@ namespace cocoa::gb {
 /// @see https://gbdev.io/pandocs/CPU_Instruction_Set.html
 class Sm83 final {
 public:
-    explicit Sm83(MemoryBus& bus);
+    explicit Sm83(std::shared_ptr<spdlog::logger> log, MemoryBus& bus);
 
     ~Sm83() noexcept = default;
 
+    void step();
+
 private:
-    std::array<uint8_t, 8> m_regs;
-    uint16_t m_sp;
-    uint16_t m_pc;
-    size_t m_cycles;
-    MemoryBus& m_bus;
-
-    // clang-format off
-    enum class RegIndex { A = 0, F = 1, B = 2, C = 3, D = 4, E = 5, H = 6, L = 7 };
-    enum class Reg8 { B = 0, C = 1, D = 2, E = 3, H = 4, L = 5, HL = 6, A = 7 };
-    enum class Reg16 { BC = 0, DE = 1, HL = 2, SP = 3 };
-    enum class Reg16Stk { BC = 0, DE = 1, HL = 2, AF = 3 };
-    enum class Reg16Mem { BC = 0, DE = 1, HLI = 2, HLD = 3 };
-    enum class Flag { Z = 7, N = 6, H = 5, C = 4 };
-    // clang-format on
-
-    template <enum Reg16 REG16>
-    constexpr auto reg16() const
-    {
-        if constexpr (REG16 == Reg16::BC) {
-            return cocoa::from_pair<uint16_t, uint8_t>(
-                m_regs[cocoa::from_enum(RegIndex::B)], m_regs[cocoa::from_enum(RegIndex::C)]);
-        }
-
-        if constexpr (REG16 == Reg16::DE) {
-            return cocoa::from_pair<uint16_t, uint8_t>(
-                m_regs[cocoa::from_enum(RegIndex::D)], m_regs[cocoa::from_enum(RegIndex::E)]);
-        }
-
-        if constexpr (REG16 == Reg16::HL) {
-            return cocoa::from_pair<uint16_t, uint8_t>(
-                m_regs[cocoa::from_enum(RegIndex::H)], m_regs[cocoa::from_enum(RegIndex::L)]);
-        }
-
-        if constexpr (REG16 == Reg16::SP)
-            return m_sp;
-    }
-
-    template <enum Reg16Stk REG16_STK>
-    constexpr auto reg16_stk() const
-    {
-        if constexpr (REG16_STK == Reg16Stk::BC)
-            return reg16<Reg16::BC>();
-
-        if constexpr (REG16_STK == Reg16Stk::DE)
-            return reg16<Reg16::DE>();
-
-        if constexpr (REG16_STK == Reg16Stk::HL)
-            return reg16<Reg16::HL>();
-
-        if constexpr (REG16_STK == Reg16Stk::AF) {
-            return cocoa::from_pair<uint16_t, uint8_t>(
-                m_regs[cocoa::from_enum(RegIndex::A)], m_regs[cocoa::from_enum(RegIndex::F)]);
-        }
-    }
-
-    template <enum Reg8 REG8>
-    constexpr auto reg8() const
-    {
-        if constexpr (REG8 == Reg8::B)
-            return m_regs[cocoa::from_enum(RegIndex::B)];
-        if constexpr (REG8 == Reg8::C)
-            return m_regs[cocoa::from_enum(RegIndex::C)];
-        if constexpr (REG8 == Reg8::D)
-            return m_regs[cocoa::from_enum(RegIndex::D)];
-        if constexpr (REG8 == Reg8::E)
-            return m_regs[cocoa::from_enum(RegIndex::E)];
-        if constexpr (REG8 == Reg8::H)
-            return m_regs[cocoa::from_enum(RegIndex::H)];
-        if constexpr (REG8 == Reg8::L)
-            return m_regs[cocoa::from_enum(RegIndex::L)];
-        if constexpr (REG8 == Reg8::HL)
-            return m_bus.read_u8(reg16<Reg16::HL>());
-        if constexpr (REG8 == Reg8::A)
-            return m_regs[cocoa::from_enum(RegIndex::A)];
-    }
+    std::shared_ptr<spdlog::logger> m_log;
+    Sm83State m_state;
 };
+
+class IllegalOpcode final : public std::exception {
+public:
+    explicit IllegalOpcode(std::string message);
+
+    const char* what() const noexcept;
+
+private:
+    std::string m_message;
+};
+
 } // namespace cocoa::gb
 
 #endif // COCOA_GB_CPU_HPP
