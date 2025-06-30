@@ -85,12 +85,90 @@ enum class OpcodeKind : uint8_t {
     LoadRegARegL = 0x7D,
     LoadRegARegHL = 0x7E,
     LoadRegARegA = 0x7F,
+    LoadRegBImm8 = 0x06,
+    LoadRegCImm8 = 0x0E,
+    LoadRegDImm8 = 0x16,
+    LoadRegEImm8 = 0x1E,
+    LoadRegHImm8 = 0x26,
+    LoadRegLImm8 = 0x2E,
+    LoadRegHLImm8 = 0x36,
+    LoadRegAImm8 = 0x3E,
+    LoadRegAMemBC = 0x0A,
+    LoadRegAMemDE = 0x1A,
+    LoadRegAMemHLI = 0x2A,
+    LoadRegAMemHLD = 0x3A,
+    LoadMemBCRegA = 0x02,
+    LoadMemDERegA = 0x12,
+    LoadMemHLIRegA = 0x22,
+    LoadMemHLDRegA = 0x32,
+    LoadRegAImm16Mem = 0xFA,
+    LoadImm16MemRegA = 0xEA,
+    LoadHighRegARegCMem = 0xF2,
+    LoadHighRegCMemRegA = 0xE2,
+    LoadHighRegAImm8Mem = 0xF0,
+    LoadHighImm8MemRegA = 0xE0
 };
 
 template <enum Reg8 REGX, enum Reg8 REGY>
 static constexpr void load_regx_regy(Sm83State& cpu)
 {
     cpu.set_reg8<REGX>(cpu.get_reg8<REGY>());
+}
+
+template <enum Reg8 REGX>
+static constexpr void load_regx_imm8(Sm83State& cpu)
+{
+    cpu.set_reg8<REGX>(cpu.bus.read_u8(cpu.pc++));
+}
+
+template <enum Reg16Mem REG16X_MEM>
+static constexpr void load_rega_reg16_mem(Sm83State& cpu)
+{
+    cpu.set_reg8<Reg8::A>(cpu.get_reg16_mem<REG16X_MEM>());
+}
+
+template <enum Reg16Mem REGX_MEM>
+static constexpr void load_reg16_mem_rega(Sm83State& cpu)
+{
+    cpu.set_reg16_mem<REGX_MEM>(cpu.get_reg8<Reg8::A>());
+}
+
+static void load_rega_imm16_mem(Sm83State& cpu)
+{
+    uint16_t addr = cpu.bus.read_u16(cpu.pc);
+    cpu.pc += 2;
+    cpu.set_reg8<Reg8::A>(cpu.bus.read_u8(addr));
+}
+
+static void load_imm16_mem_rega(Sm83State& cpu)
+{
+    uint16_t addr = cpu.bus.read_u16(cpu.pc);
+    cpu.pc += 2;
+    cpu.bus.write_u8(addr, cpu.get_reg8<Reg8::A>());
+}
+
+static void load_high_rega_regc_mem(Sm83State& cpu)
+{
+    uint16_t addr = cocoa::from_pair<uint16_t, uint8_t>(cpu.get_reg8<Reg8::C>(), 0xFF);
+    cpu.set_reg8<Reg8::A>(cpu.bus.read_u8(addr));
+}
+
+static void load_high_regc_mem_rega(Sm83State& cpu)
+{
+    uint16_t addr = cocoa::from_pair<uint16_t, uint8_t>(cpu.get_reg8<Reg8::C>(), 0xFF);
+    cpu.bus.write_u8(addr, cpu.get_reg8<Reg8::A>());
+}
+
+static void load_high_rega_imm8_mem(Sm83State& cpu)
+{
+    uint16_t addr = cocoa::from_pair<uint16_t, uint8_t>(cpu.bus.read_u8(cpu.pc++), 0xFF);
+    cpu.set_reg8<Reg8::A>(cpu.bus.read_u8(addr));
+}
+
+static void load_high_imm8_mem_rega(Sm83State& cpu)
+{
+    uint16_t addr = cocoa::from_pair<uint16_t, uint8_t>(cpu.bus.read_u8(cpu.pc++), 0xFF);
+    cpu.bus.write_u8(addr, cpu.get_reg8<Reg8::A>());
 }
 
 constexpr std::array<Opcode, 256> new_no_prefix_opcodes()
@@ -222,6 +300,50 @@ constexpr std::array<Opcode, 256> new_no_prefix_opcodes()
         = Opcode { "LD A, [HL]", 1, load_regx_regy<Reg8::A, Reg8::HL> };
     opcodes[cocoa::from_enum(OpcodeKind::LoadRegARegA)]
         = Opcode { "LD A, A", 1, load_regx_regy<Reg8::A, Reg8::A> };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadRegBImm8)]
+        = Opcode { "LD B, imm8", 2, load_regx_imm8<Reg8::B> };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadRegCImm8)]
+        = Opcode { "LD C, imm8", 2, load_regx_imm8<Reg8::C> };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadRegDImm8)]
+        = Opcode { "LD D, imm8", 2, load_regx_imm8<Reg8::D> };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadRegEImm8)]
+        = Opcode { "LD E, imm8", 2, load_regx_imm8<Reg8::E> };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadRegHImm8)]
+        = Opcode { "LD H, imm8", 2, load_regx_imm8<Reg8::H> };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadRegLImm8)]
+        = Opcode { "LD L, imm8", 2, load_regx_imm8<Reg8::L> };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadRegHLImm8)]
+        = Opcode { "LD [HL], imm8", 2, load_regx_imm8<Reg8::HL> };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadRegAImm8)]
+        = Opcode { "LD B, imm8", 2, load_regx_imm8<Reg8::A> };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadRegAMemBC)]
+        = Opcode { "LD A, [BC]", 2, load_rega_reg16_mem<Reg16Mem::BC> };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadRegAMemDE)]
+        = Opcode { "LD A, [DE]", 2, load_rega_reg16_mem<Reg16Mem::DE> };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadRegAMemHLI)]
+        = Opcode { "LD A, [HL+]", 2, load_rega_reg16_mem<Reg16Mem::HLI> };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadRegAMemHLD)]
+        = Opcode { "LD A, [HL-]", 2, load_rega_reg16_mem<Reg16Mem::HLD> };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadMemBCRegA)]
+        = Opcode { "LD [BC], A", 2, load_reg16_mem_rega<Reg16Mem::BC> };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadMemDERegA)]
+        = Opcode { "LD [DE], A", 2, load_reg16_mem_rega<Reg16Mem::DE> };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadMemHLIRegA)]
+        = Opcode { "LD [HL+], A", 2, load_reg16_mem_rega<Reg16Mem::HLD> };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadMemHLDRegA)]
+        = Opcode { "LD [HL-], A", 2, load_reg16_mem_rega<Reg16Mem::HLI> };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadRegAImm16Mem)]
+        = Opcode { "LD A, [imm16]", 4, load_rega_imm16_mem };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadImm16MemRegA)]
+        = Opcode { "LD [imm16], A", 4, load_imm16_mem_rega };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadHighRegARegCMem)]
+        = Opcode { "LDH A, [C]", 2, load_high_rega_regc_mem };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadHighRegCMemRegA)]
+        = Opcode { "LDH [C], A", 2, load_high_regc_mem_rega };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadHighRegAImm8Mem)]
+        = Opcode { "LDH A, [imm8]", 3, load_high_rega_imm8_mem };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadHighImm8MemRegA)]
+        = Opcode { "LDH [imm8], A", 3, load_high_imm8_mem_rega };
     return opcodes;
 }
 
@@ -249,8 +371,8 @@ void Sm83::step()
         throw IllegalOpcode(fmt::format("Illegal opcode {1:02X} ???", opcode));
     }
 
-    instr.execute(m_state);
     m_log->debug("Execute opcode {0:02X} {1}", opcode, instr.mnemonic);
+    instr.execute(m_state);
     m_state.cycles += instr.cycles;
 }
 

@@ -47,7 +47,11 @@ try {
     logger->critical("This is a simple critical error message");
 
     cocoa::gb::MemoryBus bus;
-    cocoa::gb::Sm83 cpu(bus);
+    cocoa::gb::Sm83 cpu(logger, bus);
+
+    bus.write_u16(0, 0x7F46);
+    cpu.step();
+    cpu.step();
 
     constexpr int winWidth = 600;
     constexpr int winHeight = 400;

@@ -155,6 +155,56 @@ struct Sm83State final {
         }
     }
 
+    template <enum Reg16Mem REG16_MEM>
+    constexpr uint8_t get_reg16_mem()
+    {
+        if constexpr (REG16_MEM == Reg16Mem::BC) {
+            return bus.read_u8(get_reg16<Reg16::BC>());
+        }
+
+        if constexpr (REG16_MEM == Reg16Mem::DE) {
+            return bus.read_u8(get_reg16<Reg16::DE>());
+        }
+
+        if constexpr (REG16_MEM == Reg16Mem::HLI) {
+            uint16_t hli = get_reg16<Reg16::HL>();
+            uint8_t value = bus.read_u8(hli++);
+            set_reg16<Reg16::HL>(hli);
+            return value;
+        }
+
+        if constexpr (REG16_MEM == Reg16Mem::HLD) {
+            uint16_t hli = get_reg16<Reg16::HL>();
+            uint8_t value = bus.read_u8(hli--);
+            set_reg16<Reg16::HL>(hli);
+            return value;
+        }
+    }
+
+    template <enum Reg16Mem REG16_MEM>
+    constexpr void set_reg16_mem(uint8_t value)
+    {
+        if constexpr (REG16_MEM == Reg16Mem::BC) {
+            bus.write_u8(get_reg16<Reg16::BC>(), value);
+        }
+
+        if constexpr (REG16_MEM == Reg16Mem::DE) {
+            bus.write_u8(get_reg16<Reg16::DE>(), value);
+        }
+
+        if constexpr (REG16_MEM == Reg16Mem::HLI) {
+            uint16_t hli = get_reg16<Reg16::HL>();
+            bus.write_u8(hli++, value);
+            set_reg16<Reg16::HL>(hli);
+        }
+
+        if constexpr (REG16_MEM == Reg16Mem::HLD) {
+            uint16_t hli = get_reg16<Reg16::HL>();
+            bus.write_u8(hli--, value);
+            set_reg16<Reg16::HL>(hli);
+        }
+    }
+
     template <enum Reg8 REG8>
     constexpr uint8_t get_reg8() const
     {
