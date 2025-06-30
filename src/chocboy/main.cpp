@@ -13,6 +13,8 @@
 #include <spdlog/spdlog.h>
 
 #include "cocoa/utilities.hpp"
+#include "cocoa/gb/memory.hpp"
+#include "cocoa/gb/cpu.hpp"
 #include "chocboy/config.hpp"
 
 int main(int argc, char** argv)
@@ -43,6 +45,9 @@ try {
     logger->warn("This is a simple warning message");
     logger->error("This is a simple error message");
     logger->critical("This is a simple critical error message");
+
+    cocoa::gb::MemoryBus bus;
+    cocoa::gb::Sm83 cpu(bus);
 
     constexpr int winWidth = 600;
     constexpr int winHeight = 400;
