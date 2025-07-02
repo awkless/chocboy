@@ -246,6 +246,30 @@ struct Sm83State final {
         if constexpr (REG8 == Reg8::A)
              regs[cocoa::from_enum(RegIndex::A)] = value;
     }
+
+    template <enum Flag FLAG>
+    constexpr void set_flag()
+    {
+        uint8_t flag = regs[cocoa::from_enum(RegIndex::F)];
+        set_bit<uint8_t, cocoa::from_enum(FLAG)>(flag);
+        regs[cocoa::from_enum(RegIndex::F)] = flag;
+    }
+
+    template <enum Flag FLAG>
+    constexpr void clear_flag()
+    {
+        uint8_t flag = regs[cocoa::from_enum(RegIndex::F)];
+        clear_bit<uint8_t, cocoa::from_enum(FLAG)>(flag);
+        regs[cocoa::from_enum(RegIndex::F)] = flag;
+    }
+
+    template <enum Flag FLAG>
+    constexpr void conditional_flag_toggle(bool condition)
+    {
+        uint8_t flag = regs[cocoa::from_enum(RegIndex::F)];
+        conditional_bit_toggle<uint8_t, cocoa::from_enum(FLAG)>(flag, condition);
+        regs[cocoa::from_enum(RegIndex::F)] = flag;
+    }
 };
 
 /// @brief SM83 CPU implementation.

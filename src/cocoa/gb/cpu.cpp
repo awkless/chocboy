@@ -106,8 +106,48 @@ enum class OpcodeKind : uint8_t {
     LoadHighRegARegCMem = 0xF2,
     LoadHighRegCMemRegA = 0xE2,
     LoadHighRegAImm8Mem = 0xF0,
-    LoadHighImm8MemRegA = 0xE0
+    LoadHighImm8MemRegA = 0xE0,
+    LoadRegBCImm16 = 0x01,
+    LoadRegDEImm16 = 0x11,
+    LoadRegHLImm16 = 0x21,
+    LoadRegSPImm16 = 0x31,
+    LoadImm16MemRegSP = 0x08,
+    LoadRegSPRegHL = 0xF9,
+    PushBC = 0xC5,
+    PushDE = 0xD5,
+    PushHL = 0xE5,
+    PushAF = 0xF5,
+    PopBC = 0xC1,
+    PopDE = 0xD1,
+    PopHL = 0xE1,
+    PopAF = 0xF1,
+    LoadRegHLRegSPOffset = 0xF8,
 };
+
+enum class Operation : int {
+    Add,
+    Sub
+};
+
+template <enum Operation OP, typename X, typename Y>
+static constexpr bool is_carry(X result, Y val1)
+{
+    if (OP == Operation::Add) {
+        return result < val1;
+    } else {
+        return result > val1;
+    }
+}
+
+template <enum Operation OP, typename X, typename Y>
+static constexpr bool is_half_carry(X val1, Y val2)
+{
+    if (OP == Operation::Add) {
+        return (((val1 & 0x0F) + (val2 & 0x0F)) & 0x10) == 0x10;
+    } else {
+        return (((val1 & 0x0F) - (val2 & 0x0F)) & 0x10) == 0x10;
+    }
+}
 
 template <enum Reg8 REGX, enum Reg8 REGY>
 static constexpr void load_regx_regy(Sm83State& cpu)
@@ -169,6 +209,57 @@ static void load_high_imm8_mem_rega(Sm83State& cpu)
 {
     uint16_t addr = cocoa::from_pair<uint16_t, uint8_t>(cpu.bus.read_u8(cpu.pc++), 0xFF);
     cpu.bus.write_u8(addr, cpu.get_reg8<Reg8::A>());
+}
+
+template <enum Reg16 REG16>
+static constexpr void load_regx_imm16(Sm83State& cpu)
+{
+    uint16_t imm16 = cpu.bus.read_u16(cpu.pc);
+    cpu.pc += 2;
+    cpu.set_reg16<REG16>(imm16);
+}
+
+static void load_imm16_mem_regsp(Sm83State& cpu)
+{
+    uint16_t addr = cpu.bus.read_u16(cpu.pc);
+    cpu.pc += 2;
+    cpu.bus.write_u16(addr, cpu.get_reg16<Reg16::SP>());
+}
+
+static void load_regsp_reghl(Sm83State& cpu)
+{
+    cpu.set_reg16<Reg16::SP>(cpu.get_reg16<Reg16::HL>());
+}
+
+template <enum Reg16Stk REG16_STK>
+static constexpr void push_regx(Sm83State& cpu)
+{
+    uint16_t addr = cpu.get_reg16<Reg16::SP>();
+    cpu.bus.write_u8(addr--, cocoa::from_low(cpu.get_reg16_stk<REG16_STK>()));
+    cpu.bus.write_u8(addr--, cocoa::from_high(cpu.get_reg16_stk<REG16_STK>()));
+    cpu.set_reg16<Reg16::SP>(addr);
+}
+
+template <enum Reg16Stk REG16_STK>
+static constexpr void pop_regx(Sm83State& cpu)
+{
+    uint16_t addr = cpu.get_reg16<Reg16::SP>();
+    uint8_t high = cpu.bus.read_u8(addr++);
+    uint8_t low = cpu.bus.read_u8(addr++);
+    cpu.set_reg16_stk<REG16_STK>(cocoa::from_pair<uint16_t, uint8_t>(high, low));
+}
+
+static void load_reghl_regsp_offset(Sm83State& cpu)
+{
+    int8_t offset = static_cast<int8_t>(cpu.bus.read_u8(cpu.pc++));
+    uint16_t regsp = cpu.get_reg16<Reg16::SP>();
+    uint16_t result = static_cast<uint16_t>(regsp + offset);
+    cpu.set_reg16<Reg16::HL>(result);
+
+    cpu.clear_flag<Flag::Z>();
+    cpu.clear_flag<Flag::N>();
+    cpu.conditional_flag_toggle<Flag::H>(is_half_carry<Operation::Add>(regsp, offset));
+    cpu.conditional_flag_toggle<Flag::C>(is_carry<Operation::Add>(result, regsp));
 }
 
 constexpr std::array<Opcode, 256> new_no_prefix_opcodes()
@@ -344,6 +435,36 @@ constexpr std::array<Opcode, 256> new_no_prefix_opcodes()
         = Opcode { "LDH A, [imm8]", 3, load_high_rega_imm8_mem };
     opcodes[cocoa::from_enum(OpcodeKind::LoadHighImm8MemRegA)]
         = Opcode { "LDH [imm8], A", 3, load_high_imm8_mem_rega };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadRegBCImm16)]
+        = Opcode { "LD BC, imm16", 3, load_regx_imm16<Reg16::BC> };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadRegDEImm16)]
+        = Opcode { "LD DE, imm16", 3, load_regx_imm16<Reg16::DE> };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadRegHLImm16)]
+        = Opcode { "LD HL, imm16", 3, load_regx_imm16<Reg16::HL> };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadRegSPImm16)]
+        = Opcode { "LD SP, imm16", 3, load_regx_imm16<Reg16::SP> };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadImm16MemRegSP)]
+        = Opcode { "LD [imm16], SP", 5, load_imm16_mem_regsp };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadRegSPRegHL)]
+        = Opcode { "LD SP, HL", 2, load_regsp_reghl };
+    opcodes[cocoa::from_enum(OpcodeKind::PushBC)]
+        = Opcode { "PUSH BC", 4, push_regx<Reg16Stk::BC> };
+    opcodes[cocoa::from_enum(OpcodeKind::PushDE)]
+        = Opcode { "PUSH DE", 4, push_regx<Reg16Stk::DE> };
+    opcodes[cocoa::from_enum(OpcodeKind::PushHL)]
+        = Opcode { "PUSH HL", 4, push_regx<Reg16Stk::HL> };
+    opcodes[cocoa::from_enum(OpcodeKind::PushAF)]
+        = Opcode { "PUSH AF", 4, push_regx<Reg16Stk::AF> };
+    opcodes[cocoa::from_enum(OpcodeKind::PopBC)]
+        = Opcode { "POP BC", 3, pop_regx<Reg16Stk::BC> };
+    opcodes[cocoa::from_enum(OpcodeKind::PopDE)]
+        = Opcode { "POP DE", 3, pop_regx<Reg16Stk::DE> };
+    opcodes[cocoa::from_enum(OpcodeKind::PopHL)]
+        = Opcode { "POP HL", 3, pop_regx<Reg16Stk::HL> };
+    opcodes[cocoa::from_enum(OpcodeKind::PopAF)]
+        = Opcode { "POP AF", 3, pop_regx<Reg16Stk::AF> };
+    opcodes[cocoa::from_enum(OpcodeKind::LoadRegHLRegSPOffset)]
+        = Opcode { "LD HL, SP + imm8", 3, load_reghl_regsp_offset };
     return opcodes;
 }
 
