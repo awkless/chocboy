@@ -33,7 +33,37 @@ TEST_CASE("constexpr void cocoa::conditional_bit_toggle(T&)", "[conditional_bit_
     REQUIRE(data == 0b00000001);
 }
 
-TEST_CASE("constexpr T from_pair(V high, V low)", "[from_pair]")
+TEST_CASE("constexpr bool cocoa::is_bit_set(T)", "[is_bit_set]")
+{
+    uint8_t data = 0b10001001;
+    REQUIRE(cocoa::is_bit_set<uint8_t, 0>(data) == true);
+    REQUIRE(cocoa::is_bit_set<uint8_t, 3>(data) == true);
+    REQUIRE(cocoa::is_bit_set<uint8_t, 4>(data) == false);
+    REQUIRE(cocoa::is_bit_set<uint8_t, 5>(data) == false);
+    REQUIRE(cocoa::is_bit_set<uint8_t, 7>(data) == true);
+}
+
+TEST_CASE("constexpr void cocoa::complement_bit(T&)", "[complement_bit]")
+{
+    uint8_t data = 0b10001001;
+
+    cocoa::toggle_bit<uint8_t, 0>(data);
+    REQUIRE(cocoa::is_bit_set<uint8_t, 0>(data) == false);
+
+    cocoa::toggle_bit<uint8_t, 3>(data);
+    REQUIRE(cocoa::is_bit_set<uint8_t, 3>(data) == false);
+
+    cocoa::toggle_bit<uint8_t, 4>(data);
+    REQUIRE(cocoa::is_bit_set<uint8_t, 4>(data) == true);
+
+    cocoa::toggle_bit<uint8_t, 5>(data);
+    REQUIRE(cocoa::is_bit_set<uint8_t, 5>(data) == true);
+
+    cocoa::toggle_bit<uint8_t, 7>(data);
+    REQUIRE(cocoa::is_bit_set<uint8_t, 7>(data) == false);
+}
+
+TEST_CASE("constexpr T cocoa::from_pair(V high, V low)", "[from_pair]")
 {
     uint16_t expect1 = cocoa::from_pair<uint16_t, uint8_t>(0xBE, 0xEF);
     REQUIRE(expect1 == 0xBEEF);
@@ -42,7 +72,7 @@ TEST_CASE("constexpr T from_pair(V high, V low)", "[from_pair]")
     REQUIRE(expect2 == 0xDEADBEEF);
 }
 
-TEST_CASE("constexpr T from_high(V)", "[from_high]")
+TEST_CASE("constexpr T cocoa::from_high(V)", "[from_high]")
 {
     uint8_t expect1 = cocoa::from_high<uint8_t, uint16_t>(0xBEEF);
     REQUIRE(expect1 == 0xBE);
@@ -51,7 +81,7 @@ TEST_CASE("constexpr T from_high(V)", "[from_high]")
     REQUIRE(expect2 == 0xDEAD);
 }
 
-TEST_CASE("constexpr T from_low(V)", "[from_low]")
+TEST_CASE("constexpr T cocoa::from_low(V)", "[from_low]")
 {
     uint8_t expect1 = cocoa::from_low<uint8_t, uint16_t>(0xBEEF);
     REQUIRE(expect1 == 0xEF);

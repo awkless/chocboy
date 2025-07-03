@@ -42,6 +42,39 @@ constexpr void clear_bit(T& var)
     var &= static_cast<T>(~(T(1) << Position));
 }
 
+/// @brief Test if target bit is set.
+///
+/// @pre Given variable must be an unsigned integral type.
+/// @pre Position must range between [0, n), where _n_ is the total number of bits available in
+///      target variable.
+///
+/// @param [in] var Target variable to test bit inside of.
+/// @return True if bit is set, false otherwise.
+template <typename T, size_t Position>
+constexpr bool is_bit_set(T var)
+{
+    static_assert(Position < std::numeric_limits<T>::digits, "position exceeds maximum bit range");
+    static_assert(std::is_integral<T>::value == true, "type is not an integral type");
+    static_assert(std::is_unsigned<T>::value == true, "type is not an unsigned type");
+    return (var >> Position) & T(1);
+}
+
+/// @brief Toggle target bit in variable.
+///
+/// @pre Given variable must be an unsigned integral type.
+/// @pre Position must range between [0, n), where _n_ is the total number of bits available in
+///      target variable.
+///
+/// @param [in,out] var Target variable to toggle bit inside of.
+template <typename T, size_t Position>
+constexpr void toggle_bit(T& var)
+{
+    static_assert(Position < std::numeric_limits<T>::digits, "position exceeds maximum bit range");
+    static_assert(std::is_integral<T>::value == true, "type is not an integral type");
+    static_assert(std::is_unsigned<T>::value == true, "type is not an unsigned type");
+    var ^= static_cast<T>((T(1) << Position));
+}
+
 /// @brief Toggle target bit based on condition.
 ///
 /// If condition is true, then bit will be set. Otherwise, bit will be cleared.

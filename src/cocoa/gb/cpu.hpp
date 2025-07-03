@@ -270,6 +270,21 @@ struct Sm83State final {
         conditional_bit_toggle<uint8_t, cocoa::from_enum(FLAG)>(flag, condition);
         regs[cocoa::from_enum(RegIndex::F)] = flag;
     }
+
+    template <enum Flag FLAG>
+    constexpr void toggle_flag()
+    {
+        uint8_t flag = regs[cocoa::from_enum(RegIndex::F)];
+        toggle_bit<uint8_t, cocoa::from_enum(FLAG)>(flag);
+        regs[cocoa::from_enum(RegIndex::F)] = flag;
+    }
+
+    template <enum Flag FLAG>
+    constexpr bool is_flag_set()
+    {
+        uint8_t flag = regs[cocoa::from_enum(RegIndex::F)];
+        return is_bit_set<uint8_t, cocoa::from_enum(FLAG)>(flag);
+    }
 };
 
 /// @brief SM83 CPU implementation.
