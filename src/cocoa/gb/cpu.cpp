@@ -237,7 +237,7 @@ enum class Operation : int {
 template <enum Operation OP, typename X, typename Y>
 static constexpr bool is_carry(X result, Y val1)
 {
-    if (OP == Operation::Add) {
+    if constexpr (OP == Operation::Add) {
         return result < val1;
     } else {
         return result > val1;
@@ -247,7 +247,7 @@ static constexpr bool is_carry(X result, Y val1)
 template <enum Operation OP, typename X, typename Y>
 static constexpr bool is_half_carry(X val1, Y val2)
 {
-    if (OP == Operation::Add) {
+    if constexpr (OP == Operation::Add) {
         return (((val1 & 0x0F) + (val2 & 0x0F)) & 0x10) == 0x10;
     } else {
         return (((val1 & 0x0F) - (val2 & 0x0F)) & 0x10) == 0x10;
