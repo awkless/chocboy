@@ -12,9 +12,9 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-#include "cocoa/utilities.hpp"
 #include "cocoa/gb/memory.hpp"
 #include "cocoa/gb/cpu.hpp"
+#include "cocoa/utility.hpp"
 #include "chocboy/config.hpp"
 
 int main(int argc, char** argv)

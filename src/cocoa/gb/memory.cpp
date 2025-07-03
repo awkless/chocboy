@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #include "cocoa/gb/memory.hpp"
-#include "cocoa/utilities.hpp"
+#include "cocoa/utility.hpp"
 
 namespace cocoa::gb {
 uint8_t MemoryBus::read_u8(const uint16_t address) const

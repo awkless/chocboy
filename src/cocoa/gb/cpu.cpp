@@ -13,6 +13,7 @@
 
 #include "cocoa/gb/cpu.hpp"
 #include "cocoa/gb/memory.hpp"
+#include "cocoa/utility.hpp"
 
 namespace cocoa::gb {
 struct Opcode final {

@@ -12,7 +12,7 @@
 #include <spdlog/logger.h>
 
 #include "cocoa/gb/memory.hpp"
-#include "cocoa/utilities.hpp"
+#include "cocoa/utility.hpp"
 
 namespace cocoa::gb {
 enum class RegIndex {

@@ -79,7 +79,7 @@ jobs:
       - name: Build COCOBOY
         run: cmake --build --preset conan-debug
 
-      - name: Run Tests
+      - name: Run Unit Tests
         if: runner.os != 'Windows'
         working-directory: ./build
-        run: ctest --test-dir Debug
+        run: ctest --test-dir Debug/src/cocoa

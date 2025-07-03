@@ -5,7 +5,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "cocoa/utilities.hpp"
+#include "cocoa/utility.hpp"
 
 TEST_CASE("constexpr void cocoa::set_bit(T&)", "[set_bit]")
 {
