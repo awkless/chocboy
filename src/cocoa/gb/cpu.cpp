@@ -167,6 +167,22 @@ enum class OpcodeKind : uint8_t {
     CpRegHL = 0xB8,
     CpRegA = 0xB8,
     CpImm8 = 0xFE,
+    IncrementRegB = 0x04,
+    IncrementRegC = 0x0C,
+    IncrementRegD = 0x14,
+    IncrementRegE = 0x1C,
+    IncrementRegH = 0x24,
+    IncrementRegL = 0x2C,
+    IncrementRegHL = 0x34,
+    IncrementRegA = 0x3C,
+    DecrementRegB = 0x05,
+    DecrementRegC = 0x0E,
+    DecrementRegD = 0x15,
+    DecrementRegE = 0x1E,
+    DecrementRegH = 0x25,
+    DecrementRegL = 0x2E,
+    DecrementRegHL = 0x35,
+    DecrementRegA = 0x3E,
     AndRegB = 0xA0,
     AndRegC = 0xA1,
     AndRegD = 0xA2,
@@ -482,6 +498,30 @@ static void cp_imm8(Sm83State& cpu)
     cpu.set_flag<Flag::N>();
     cpu.conditional_flag_toggle<Flag::H>(is_half_carry<Operation::Sub>(rega, imm8));
     cpu.conditional_flag_toggle<Flag::C>(is_carry<Operation::Sub>(result, rega));
+}
+
+template <enum Reg8 REGX>
+static constexpr void increment_regx(Sm83State& cpu)
+{
+    uint8_t regx = cpu.get_reg8<REGX>();
+    uint8_t result = regx + 1;
+    cpu.set_reg8<REGX>(result);
+
+    cpu.conditional_flag_toggle<Flag::Z>(result == 0);
+    cpu.clear_flag<Flag::N>();
+    cpu.conditional_flag_toggle<Flag::H>(is_half_carry<Operation::Add>(regx, 1));
+}
+
+template <enum Reg8 REGX>
+static constexpr void decrement_regx(Sm83State& cpu)
+{
+    uint8_t regx = cpu.get_reg8<REGX>();
+    uint8_t result = regx - 1;
+    cpu.set_reg8<REGX>(result);
+
+    cpu.conditional_flag_toggle<Flag::Z>(result == 0);
+    cpu.set_flag<Flag::N>();
+    cpu.conditional_flag_toggle<Flag::H>(is_half_carry<Operation::Sub>(regx, 1));
 }
 
 template <enum Reg8 REGX>
@@ -936,6 +976,38 @@ constexpr std::array<Opcode, 256> new_no_prefix_opcodes()
         = Opcode { "CP A", 1, cp_regx<Reg8::A> };
     opcodes[cocoa::from_enum(OpcodeKind::CpImm8)]
         = Opcode { "CP imm8", 2, cp_imm8 };
+    opcodes[cocoa::from_enum(OpcodeKind::IncrementRegB)]
+        = Opcode { "INC B", 1, increment_regx<Reg8::B> };
+    opcodes[cocoa::from_enum(OpcodeKind::IncrementRegC)]
+        = Opcode { "INC C", 1, increment_regx<Reg8::C> };
+    opcodes[cocoa::from_enum(OpcodeKind::IncrementRegD)]
+        = Opcode { "INC D", 1, increment_regx<Reg8::D> };
+    opcodes[cocoa::from_enum(OpcodeKind::IncrementRegE)]
+        = Opcode { "INC E", 1, increment_regx<Reg8::E> };
+    opcodes[cocoa::from_enum(OpcodeKind::IncrementRegH)]
+        = Opcode { "INC H", 1, increment_regx<Reg8::H> };
+    opcodes[cocoa::from_enum(OpcodeKind::IncrementRegL)]
+        = Opcode { "INC L", 1, increment_regx<Reg8::L> };
+    opcodes[cocoa::from_enum(OpcodeKind::IncrementRegHL)]
+        = Opcode { "INC [HL]", 3, increment_regx<Reg8::HL> };
+    opcodes[cocoa::from_enum(OpcodeKind::IncrementRegA)]
+        = Opcode { "INC A", 1, increment_regx<Reg8::A> };
+    opcodes[cocoa::from_enum(OpcodeKind::DecrementRegB)]
+        = Opcode { "DEC B", 1, decrement_regx<Reg8::B> };
+    opcodes[cocoa::from_enum(OpcodeKind::DecrementRegC)]
+        = Opcode { "DEC C", 1, decrement_regx<Reg8::C> };
+    opcodes[cocoa::from_enum(OpcodeKind::DecrementRegD)]
+        = Opcode { "DEC D", 1, decrement_regx<Reg8::D> };
+    opcodes[cocoa::from_enum(OpcodeKind::DecrementRegE)]
+        = Opcode { "DEC E", 1, decrement_regx<Reg8::E> };
+    opcodes[cocoa::from_enum(OpcodeKind::DecrementRegH)]
+        = Opcode { "DEC H", 1, decrement_regx<Reg8::H> };
+    opcodes[cocoa::from_enum(OpcodeKind::DecrementRegL)]
+        = Opcode { "DEC L", 1, decrement_regx<Reg8::L> };
+    opcodes[cocoa::from_enum(OpcodeKind::DecrementRegHL)]
+        = Opcode { "DEC [HL]", 3, decrement_regx<Reg8::HL> };
+    opcodes[cocoa::from_enum(OpcodeKind::DecrementRegA)]
+        = Opcode { "DEC A", 1, decrement_regx<Reg8::A> };
     opcodes[cocoa::from_enum(OpcodeKind::AndRegB)]
         = Opcode { "AND B", 1, and_regx<Reg8::B> };
     opcodes[cocoa::from_enum(OpcodeKind::AndRegC)]
