@@ -198,6 +198,19 @@ enum class OpcodeKind : uint8_t {
     SetCarryFlag = 0x37,
     DecimalAdjustRegA = 0x27,
     ComplementRegA = 0x2F,
+    IncrementBC = 0x03,
+    IncrementDE = 0x13,
+    IncrementHL = 0x23,
+    IncrementSP = 0x33,
+    DecrementBC = 0x0B,
+    DecrementDE = 0x1B,
+    DecrementHL = 0x2B,
+    DecrementSP = 0x3B,
+    AddRegHLRegBC = 0x09,
+    AddRegHLRegDE = 0x19,
+    AddRegHLRegHL = 0x29,
+    AddRegHLRegSP = 0x39,
+    AddRegSPRelative = 0xE8,
 };
 
 enum class Operation : int {
@@ -592,6 +605,44 @@ static void complement_rega(Sm83State& cpu)
     cpu.set_flag<Flag::H>();
 }
 
+template <enum Reg16 REG16X>
+static constexpr void increment_reg16(Sm83State& cpu)
+{
+    cpu.set_reg16<REG16X>(cpu.get_reg16<REG16X>() + 1);
+}
+
+template <enum Reg16 REG16X>
+static constexpr void decrement_reg16(Sm83State& cpu)
+{
+    cpu.set_reg16<REG16X>(cpu.get_reg16<REG16X>() - 1);
+}
+
+template <enum Reg16 REG16X>
+static constexpr void add_reghl_reg16(Sm83State& cpu)
+{
+    uint16_t reghl = cpu.get_reg16<Reg16::HL>();
+    uint16_t regx = cpu.get_reg16<REG16X>();
+    uint16_t result = reghl + regx;
+    cpu.set_reg16<Reg16::HL>(result);
+
+    cpu.clear_flag<Flag::Z>();
+    cpu.conditional_flag_toggle<Flag::H>(is_half_carry<Operation::Add>(reghl, regx));
+    cpu.conditional_flag_toggle<Flag::C>(is_carry<Operation::Add>(result, reghl));
+}
+
+static void add_regsp_relative(Sm83State& cpu)
+{
+    uint16_t regsp = cpu.get_reg16<Reg16::SP>();
+    int8_t offset = static_cast<int8_t>(cpu.bus.read_u8(cpu.pc++));
+    uint16_t result = static_cast<uint16_t>(regsp + offset);
+    cpu.set_reg16<Reg16::SP>(result);
+
+    cpu.clear_flag<Flag::Z>();
+    cpu.clear_flag<Flag::N>();
+    cpu.conditional_flag_toggle<Flag::H>(is_half_carry<Operation::Add>(regsp, offset));
+    cpu.conditional_flag_toggle<Flag::C>(is_carry<Operation::Add>(result, regsp));
+}
+
 constexpr std::array<Opcode, 256> new_no_prefix_opcodes()
 {
     std::array<Opcode, 256> opcodes = {};
@@ -947,6 +998,32 @@ constexpr std::array<Opcode, 256> new_no_prefix_opcodes()
         = Opcode { "DAA", 1, decimal_adjust_rega };
     opcodes[cocoa::from_enum(OpcodeKind::ComplementRegA)]
         = Opcode { "CCA", 1, complement_rega };
+    opcodes[cocoa::from_enum(OpcodeKind::IncrementBC)]
+        = Opcode { "INC BC", 2, increment_reg16<Reg16::BC> };
+    opcodes[cocoa::from_enum(OpcodeKind::IncrementDE)]
+        = Opcode { "INC DE", 2, increment_reg16<Reg16::DE> };
+    opcodes[cocoa::from_enum(OpcodeKind::IncrementHL)]
+        = Opcode { "INC HL", 2, increment_reg16<Reg16::HL> };
+    opcodes[cocoa::from_enum(OpcodeKind::IncrementSP)]
+        = Opcode { "INC SP", 2, increment_reg16<Reg16::SP> };
+    opcodes[cocoa::from_enum(OpcodeKind::DecrementBC)]
+        = Opcode { "DEC BC", 2, decrement_reg16<Reg16::BC> };
+    opcodes[cocoa::from_enum(OpcodeKind::DecrementDE)]
+        = Opcode { "DEC DE", 2, decrement_reg16<Reg16::DE> };
+    opcodes[cocoa::from_enum(OpcodeKind::DecrementHL)]
+        = Opcode { "DEC HL", 2, decrement_reg16<Reg16::HL> };
+    opcodes[cocoa::from_enum(OpcodeKind::DecrementSP)]
+        = Opcode { "DEC SP", 2, decrement_reg16<Reg16::SP> };
+    opcodes[cocoa::from_enum(OpcodeKind::AddRegHLRegBC)]
+        = Opcode { "ADD HL, BC", 2, add_reghl_reg16<Reg16::BC> };
+    opcodes[cocoa::from_enum(OpcodeKind::AddRegHLRegDE)]
+        = Opcode { "ADD HL, DE", 2, add_reghl_reg16<Reg16::DE> };
+    opcodes[cocoa::from_enum(OpcodeKind::AddRegHLRegHL)]
+        = Opcode { "ADD HL, HL", 2, add_reghl_reg16<Reg16::HL> };
+    opcodes[cocoa::from_enum(OpcodeKind::AddRegHLRegSP)]
+        = Opcode { "ADD HL, SP", 2, add_reghl_reg16<Reg16::SP> };
+    opcodes[cocoa::from_enum(OpcodeKind::AddRegSPRelative)]
+        = Opcode { "ADD SP, imm8", 4, add_regsp_relative };
     return opcodes;
 }
 
