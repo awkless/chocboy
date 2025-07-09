@@ -12,8 +12,6 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-#include "cocoa/gb/memory.hpp"
-#include "cocoa/gb/cpu.hpp"
 #include "cocoa/utility.hpp"
 #include "chocboy/config.hpp"
 
@@ -45,13 +43,6 @@ try {
     logger->warn("This is a simple warning message");
     logger->error("This is a simple error message");
     logger->critical("This is a simple critical error message");
-
-    cocoa::gb::MemoryBus bus;
-    cocoa::gb::Sm83 cpu(logger, bus);
-
-    bus.write_u16(0, 0x7F46);
-    cpu.step();
-    cpu.step();
 
     constexpr int winWidth = 600;
     constexpr int winHeight = 400;
