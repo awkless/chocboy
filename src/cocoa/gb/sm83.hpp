@@ -22,6 +22,8 @@ enum class Flag { Z = 7, N = 6, H = 5, C = 4 };
 enum class Condition { NZ, Z, NC, C };
 
 struct RegisterFile final {
+    // TODO: Remove yucky magic numbers for some method that initializes register state based on
+    // GameBoy hardware model being used.
     std::array<uint8_t, 8> regs = { 0x01, 0x80, 0x00, 0x13, 0x00, 0xD8, 0x01, 0x4D };
     uint16_t sp = 0xFFFE;
     uint16_t pc = 0x0100;
