@@ -7,22 +7,26 @@
 #include "cocoa/utility.hpp"
 
 namespace cocoa::gb {
-uint8_t MemoryBus::read_byte(const uint16_t address) const
+uint8_t
+MemoryBus::read_byte(const uint16_t address) const
 {
     return m_bus[address];
 }
 
-uint16_t MemoryBus::read_word(const uint16_t address) const
+uint16_t
+MemoryBus::read_word(const uint16_t address) const
 {
     return from_pair(read_byte(address), read_byte(address + 1));
 }
 
-void MemoryBus::write_byte(const uint16_t address, const uint8_t value)
+void
+MemoryBus::write_byte(const uint16_t address, const uint8_t value)
 {
     m_bus[address] = value;
 }
 
-void MemoryBus::write_word(const uint16_t address, const uint16_t value)
+void
+MemoryBus::write_word(const uint16_t address, const uint16_t value)
 {
     write_byte(address, from_high(value));
     write_byte(address + 1, from_low(value));

@@ -11,7 +11,8 @@
 
 namespace cocoa {
 template <typename T, size_t Position>
-constexpr void set_bit(T& var)
+constexpr void
+set_bit(T& var)
 {
     static_assert(Position < std::numeric_limits<T>::digits, "position exceeds maximum bit range");
     static_assert(std::is_integral<T>::value == true, "type is not an integral type");
@@ -20,7 +21,8 @@ constexpr void set_bit(T& var)
 }
 
 template <typename T, size_t Position>
-constexpr void clear_bit(T& var)
+constexpr void
+clear_bit(T& var)
 {
     static_assert(Position < std::numeric_limits<T>::digits, "position exceeds maximum bit range");
     static_assert(std::is_integral<T>::value == true, "type is not an integral type");
@@ -29,7 +31,8 @@ constexpr void clear_bit(T& var)
 }
 
 template <typename T, size_t Position>
-constexpr bool is_bit_set(T var)
+constexpr bool
+is_bit_set(T var)
 {
     static_assert(Position < std::numeric_limits<T>::digits, "position exceeds maximum bit range");
     static_assert(std::is_integral<T>::value == true, "type is not an integral type");
@@ -38,7 +41,8 @@ constexpr bool is_bit_set(T var)
 }
 
 template <typename T, size_t Position>
-constexpr void toggle_bit(T& var)
+constexpr void
+toggle_bit(T& var)
 {
     static_assert(Position < std::numeric_limits<T>::digits, "position exceeds maximum bit range");
     static_assert(std::is_integral<T>::value == true, "type is not an integral type");
@@ -47,7 +51,8 @@ constexpr void toggle_bit(T& var)
 }
 
 template <typename T, size_t Position>
-constexpr void conditional_bit_toggle(T& var, bool condition)
+constexpr void
+conditional_bit_toggle(T& var, bool condition)
 {
     static_assert(Position < std::numeric_limits<T>::digits, "position exceeds maximum bit range");
     static_assert(std::is_integral<T>::value == true, "type is not an integral type");
@@ -59,13 +64,15 @@ constexpr void conditional_bit_toggle(T& var, bool condition)
 }
 
 template <typename T>
-constexpr typename std::underlying_type<T>::type from_enum(T value)
+constexpr typename std::underlying_type<T>::type
+from_enum(T value)
 {
     return static_cast<typename std::underlying_type<T>::type>(value);
 }
 
 template <typename T, typename V>
-constexpr T from_pair(V high, V low)
+constexpr T
+from_pair(V high, V low)
 {
     static_assert(std::numeric_limits<V>::digits * 2 == std::numeric_limits<T>::digits,
         "total bits of pair exceeds bit range of target return type");
@@ -74,14 +81,16 @@ constexpr T from_pair(V high, V low)
 }
 
 template <typename T, typename V>
-constexpr T from_high(V value)
+constexpr T
+from_high(V value)
 {
     constexpr unsigned int shift = std::numeric_limits<V>::digits / 2;
     return static_cast<T>(value >> shift);
 }
 
 template <typename T, typename V>
-constexpr T from_low(V value)
+constexpr T
+from_low(V value)
 {
     constexpr unsigned int shift = std::numeric_limits<T>::digits;
     constexpr V mask = (V(1) << shift) - V(1);

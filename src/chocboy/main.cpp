@@ -12,10 +12,11 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-#include "cocoa/utility.hpp"
 #include "chocboy/config.hpp"
+#include "cocoa/utility.hpp"
 
-int main(int argc, char** argv)
+int
+main(int argc, char** argv)
 try {
     std::unique_ptr<cxxopts::Options> parser
         = std::make_unique<cxxopts::Options>(argv[0], "- testing");
@@ -23,8 +24,7 @@ try {
     constexpr size_t max_width = 90;
     auto& options = *parser;
     options.set_width(max_width).set_tab_expansion().add_options()(
-        "v,version", "version info", cxxopts::value<bool>(version)
-    );
+        "v,version", "version info", cxxopts::value<bool>(version));
     auto result = options.parse(argc, argv);
 
     if (result.count("version") != 0U) {
@@ -92,16 +92,13 @@ try {
     SDL_Quit();
 
     return 0;
-}
-catch (const spdlog::spdlog_ex& error) {
+} catch (const spdlog::spdlog_ex& error) {
     fmt::print("{}\n", error.what());
     return 1;
-}
-catch (const cxxopts::exceptions::exception& error) {
+} catch (const cxxopts::exceptions::exception& error) {
     fmt::print("{}\n", error.what());
     return 1;
-}
-catch (const std::exception& error) {
+} catch (const std::exception& error) {
     fmt::print("{}\n", error.what());
     return 1;
 }

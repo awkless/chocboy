@@ -7,8 +7,8 @@
 #include <array>
 #include <cstdint>
 #include <exception>
-#include <string>
 #include <memory>
+#include <string>
 
 #include <spdlog/logger.h>
 
@@ -30,65 +30,83 @@ struct RegisterFile final {
 
     template <enum Reg8 R>
     [[nodiscard]]
-    constexpr uint8_t load_reg8() const;
+    constexpr uint8_t
+    load_reg8() const;
 
     template <enum Reg8 R>
     [[nodiscard]]
-    constexpr uint8_t load_reg8_hram_indirect(const MemoryBus& bus) const;
+    constexpr uint8_t
+    load_reg8_hram_indirect(const MemoryBus& bus) const;
 
     template <enum Reg8 R>
-    constexpr void store_reg8(const uint8_t value);
+    constexpr void
+    store_reg8(const uint8_t value);
 
     template <enum Reg8 R>
-    constexpr void store_reg8_hram_indirect(MemoryBus& bus, const uint8_t value);
+    constexpr void
+    store_reg8_hram_indirect(MemoryBus& bus, const uint8_t value);
 
     template <enum Reg16 R>
     [[nodiscard]]
-    constexpr uint16_t load_reg16() const;
+    constexpr uint16_t
+    load_reg16() const;
 
     template <enum Reg16 R>
     [[nodiscard]]
-    constexpr uint8_t load_reg16_indirect(const MemoryBus& bus) const;
+    constexpr uint8_t
+    load_reg16_indirect(const MemoryBus& bus) const;
 
     template <enum Reg16 R>
     [[nodiscard]]
-    constexpr uint8_t load_reg16_inc_indirect(const MemoryBus& bus);
+    constexpr uint8_t
+    load_reg16_inc_indirect(const MemoryBus& bus);
 
     template <enum Reg16 R>
     [[nodiscard]]
-    constexpr uint8_t load_reg16_dec_indirect(const MemoryBus& bus);
+    constexpr uint8_t
+    load_reg16_dec_indirect(const MemoryBus& bus);
 
     template <enum Reg16 R>
-    constexpr void store_reg16(const uint16_t value);
+    constexpr void
+    store_reg16(const uint16_t value);
 
     template <enum Reg16 R>
-    constexpr void store_reg16_indirect(MemoryBus& bus, const uint8_t value);
+    constexpr void
+    store_reg16_indirect(MemoryBus& bus, const uint8_t value);
 
     template <enum Reg16 R>
-    constexpr void store_reg16_inc_indirect(MemoryBus& bus, const uint8_t value);
+    constexpr void
+    store_reg16_inc_indirect(MemoryBus& bus, const uint8_t value);
 
     template <enum Reg16 R>
-    constexpr void store_reg16_dec_indirect(MemoryBus& bus, const uint8_t value);
+    constexpr void
+    store_reg16_dec_indirect(MemoryBus& bus, const uint8_t value);
 
     template <enum Flag F>
-    constexpr void set_flag();
+    constexpr void
+    set_flag();
 
     template <enum Flag F>
-    constexpr void clear_flag();
+    constexpr void
+    clear_flag();
 
     template <enum Flag F>
-    constexpr void conditional_flag_toggle(bool condition);
+    constexpr void
+    conditional_flag_toggle(bool condition);
 
     template <enum Flag F>
-    constexpr void toggle_flag();
+    constexpr void
+    toggle_flag();
 
     template <enum Flag F>
     [[nodiscard]]
-    constexpr bool is_flag_set() const;
+    constexpr bool
+    is_flag_set() const;
 
     template <enum Condition C>
     [[nodiscard]]
-    constexpr bool is_condition_set() const;
+    constexpr bool
+    is_condition_set() const;
 };
 
 enum class ExecutionMode {
@@ -102,8 +120,34 @@ struct Sm83State final {
     RegisterFile reg;
     MemoryBus& bus;
     ExecutionMode mode;
+    bool ime = true;
 
     explicit Sm83State(MemoryBus& memory);
+
+    [[nodiscard]]
+    uint8_t
+    load_imm8();
+
+    [[nodiscard]]
+    uint8_t
+    load_imm8_hram_indirect();
+
+    void
+    store_imm8_hram_indirect(const uint8_t value);
+
+    [[nodiscard]]
+    uint16_t
+    load_imm16();
+
+    [[nodiscard]]
+    uint8_t
+    load_imm16_indirect();
+
+    void
+    store_imm16_indirect(const uint8_t value);
+
+    void
+    store_imm16_indirect(const uint16_t value);
 };
 
 struct Instruction final {
@@ -117,10 +161,12 @@ class Sm83 final {
 public:
     Sm83(std::shared_ptr<spdlog::logger> log, MemoryBus& memory);
 
-    void step();
+    void
+    step();
 
     [[nodiscard]]
-    size_t mcycles() const;
+    size_t
+    mcycles() const;
 
 private:
     std::array<Instruction, 256> m_no_prefix_instr;
@@ -133,7 +179,8 @@ class IllegalOpcode final : public std::exception {
 public:
     explicit IllegalOpcode(std::string message);
 
-    const char* what() const noexcept;
+    const char*
+    what() const noexcept;
 
 private:
     std::string m_message;

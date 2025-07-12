@@ -14,6 +14,7 @@
 #include "cocoa/gb/memory.hpp"
 #include "cocoa/gb/sm83.hpp"
 #include "cocoa/utility.hpp"
+
 namespace cocoa::gb {
 enum class Operation {
     Add,
@@ -21,7 +22,8 @@ enum class Operation {
 };
 
 template <enum Operation O, typename X, typename Y>
-static constexpr bool is_carry(X result, Y operand1)
+static constexpr bool
+is_carry(X result, Y operand1)
 {
     if constexpr (O == Operation::Add)
         return result < operand1;
@@ -30,7 +32,8 @@ static constexpr bool is_carry(X result, Y operand1)
 }
 
 template <enum Operation O, typename X, typename Y>
-static constexpr bool is_half_carry(X operand1, Y operand2)
+static constexpr bool
+is_half_carry(X operand1, Y operand2)
 {
     if constexpr (O == Operation::Add)
         return (((operand1 & 0x0F) + (operand2 & 0x0F)) & 0x10) == 0x10;
@@ -39,126 +42,133 @@ static constexpr bool is_half_carry(X operand1, Y operand2)
 }
 
 template <enum Reg8 Dst, enum Reg8 Src>
-static constexpr void load_reg8_reg8(Sm83State& cpu)
+static constexpr void
+load_reg8_reg8(Sm83State& cpu)
 {
     cpu.reg.store_reg8<Dst>(cpu.reg.load_reg8<Src>());
 }
 
 template <enum Reg16 Dst, enum Reg16 Src>
-static constexpr void load_reg16_reg16(Sm83State& cpu)
+static constexpr void
+load_reg16_reg16(Sm83State& cpu)
 {
     cpu.reg.store_reg16<Dst>(cpu.reg.load_reg16<Src>());
 }
 
 template <enum Reg8 Dst, enum Reg16 Src>
-static constexpr void load_reg8_reg16_indirect(Sm83State& cpu)
+static constexpr void
+load_reg8_reg16_indirect(Sm83State& cpu)
 {
     cpu.reg.store_reg8<Dst>(cpu.reg.load_reg16_indirect<Src>(cpu.bus));
 }
 
 template <enum Reg8 Dst, enum Reg16 Src>
-static constexpr void load_reg8_reg16_inc_indirect(Sm83State& cpu)
+static constexpr void
+load_reg8_reg16_inc_indirect(Sm83State& cpu)
 {
     cpu.reg.store_reg8<Dst>(cpu.reg.load_reg16_inc_indirect<Src>(cpu.bus));
 }
 
 template <enum Reg8 Dst, enum Reg16 Src>
-static constexpr void load_reg8_reg16_dec_indirect(Sm83State& cpu)
+static constexpr void
+load_reg8_reg16_dec_indirect(Sm83State& cpu)
 {
     cpu.reg.store_reg8<Dst>(cpu.reg.load_reg16_dec_indirect<Src>(cpu.bus));
 }
 
 template <enum Reg16 Dst, enum Reg8 Src>
-static constexpr void load_reg16_indirect_reg8(Sm83State& cpu)
+static constexpr void
+load_reg16_indirect_reg8(Sm83State& cpu)
 {
     cpu.reg.store_reg16_indirect<Dst>(cpu.bus, cpu.reg.load_reg8<Src>());
 }
 
 template <enum Reg16 Dst, enum Reg8 Src>
-static constexpr void load_reg16_inc_indirect_reg8(Sm83State& cpu)
+static constexpr void
+load_reg16_inc_indirect_reg8(Sm83State& cpu)
 {
     cpu.reg.store_reg16_inc_indirect<Dst>(cpu.bus, cpu.reg.load_reg8<Src>());
 }
 
 template <enum Reg16 Dst, enum Reg8 Src>
-static constexpr void load_reg16_dec_indirect_reg8(Sm83State& cpu)
+static constexpr void
+load_reg16_dec_indirect_reg8(Sm83State& cpu)
 {
     cpu.reg.store_reg16_dec_indirect<Dst>(cpu.bus, cpu.reg.load_reg8<Src>());
 }
 
 template <enum Reg8 Dst>
-static constexpr void load_reg8_imm8(Sm83State& cpu)
+static constexpr void
+load_reg8_imm8(Sm83State& cpu)
 {
-    cpu.reg.store_reg8<Dst>(cpu.bus.read_byte(cpu.reg.pc++));
+    cpu.reg.store_reg8<Dst>(cpu.load_imm8());
 }
 
 template <enum Reg16 Dst>
-static constexpr void load_reg16_indirect_imm8(Sm83State& cpu)
+static constexpr void
+load_reg16_indirect_imm8(Sm83State& cpu)
 {
-    uint8_t imm8 = cpu.bus.read_byte(cpu.reg.pc++);
-    cpu.reg.store_reg16_indirect<Dst>(cpu.bus, imm8);
+    cpu.reg.store_reg16_indirect<Dst>(cpu.bus, cpu.load_imm8());
 }
-
 template <enum Reg8 Dst>
-static constexpr void load_reg8_imm16_indirect(Sm83State& cpu)
+static constexpr void
+load_reg8_imm16_indirect(Sm83State& cpu)
 {
-    uint16_t imm16 = cpu.bus.read_word(cpu.reg.pc);
-    cpu.reg.pc += 2;
-    cpu.reg.store_reg8<Dst>(cpu.bus.read_byte(imm16));
+    cpu.reg.store_reg8<Dst>(cpu.load_imm16_indirect());
 }
 
 template <enum Reg8 Src>
-static constexpr void load_imm16_indirect_reg8(Sm83State& cpu)
+static constexpr void
+load_imm16_indirect_reg8(Sm83State& cpu)
 {
-    uint16_t addr = cpu.bus.read_word(cpu.reg.pc);
-    cpu.reg.pc += 2;
-    cpu.bus.write_byte(addr, cpu.reg.load_reg8<Src>());
+    cpu.store_imm16_indirect(cpu.reg.load_reg8<Src>());
 }
 
 template <enum Reg8 Dst, enum Reg8 Src>
-static constexpr void load_reg8_reg8_hram_indirect(Sm83State& cpu)
+static constexpr void
+load_reg8_reg8_hram_indirect(Sm83State& cpu)
 {
     cpu.reg.store_reg8<Dst>(cpu.reg.load_reg8_hram_indirect<Src>(cpu.bus));
 }
 
 template <enum Reg8 Dst, enum Reg8 Src>
-static constexpr void load_reg8_hram_indirect_reg8(Sm83State& cpu)
+static constexpr void
+load_reg8_hram_indirect_reg8(Sm83State& cpu)
 {
     cpu.reg.store_reg8_hram_indirect<Dst>(cpu.bus, cpu.reg.load_reg8<Src>());
 }
 
 template <enum Reg8 Dst>
-static constexpr void load_reg8_imm8_hram_indirect(Sm83State& cpu)
+static constexpr void
+load_reg8_imm8_hram_indirect(Sm83State& cpu)
 {
-    uint16_t addr = cocoa::from_pair<uint16_t, uint8_t>(0xFF, cpu.bus.read_byte(cpu.reg.pc++));
-    cpu.reg.store_reg8<Dst>(cpu.bus.read_byte(addr));
+    cpu.reg.store_reg8<Dst>(cpu.load_imm8_hram_indirect());
 }
 
 template <enum Reg8 Src>
-static constexpr void load_imm8_hram_indirect_reg8(Sm83State& cpu)
+static constexpr void
+load_imm8_hram_indirect_reg8(Sm83State& cpu)
 {
-    uint16_t addr = cocoa::from_pair<uint16_t, uint8_t>(0xFF, cpu.bus.read_byte(cpu.reg.pc++));
-    cpu.bus.write_byte(addr, cpu.reg.load_reg8<Src>());
+    cpu.store_imm8_hram_indirect(cpu.reg.load_reg8<Src>());
 }
 
 template <enum Reg16 Dst>
-static constexpr void load_reg16_imm16(Sm83State& cpu)
+static constexpr void
+load_reg16_imm16(Sm83State& cpu)
 {
-    uint16_t imm16 = cpu.bus.read_word(cpu.reg.pc);
-    cpu.reg.pc += 2;
-    cpu.reg.store_reg16<Dst>(imm16);
+    cpu.reg.store_reg16<Dst>(cpu.load_imm16());
 }
 
 template <enum Reg16 Src>
-static constexpr void load_imm16_indirect_reg16(Sm83State& cpu)
+static constexpr void
+load_imm16_indirect_reg16(Sm83State& cpu)
 {
-    uint16_t addr = cpu.bus.read_word(cpu.reg.pc);
-    cpu.reg.pc += 2;
-    cpu.bus.write_word(addr, cpu.reg.load_reg16<Src>());
+    cpu.store_imm16_indirect(cpu.reg.load_reg16<Src>());
 }
 
 template <enum Reg16 Src>
-static constexpr void push_reg16(Sm83State& cpu)
+static constexpr void
+push_reg16(Sm83State& cpu)
 {
     uint16_t reg16 = cpu.reg.load_reg16<Src>();
     --cpu.reg.sp;
@@ -168,7 +178,8 @@ static constexpr void push_reg16(Sm83State& cpu)
 }
 
 template <enum Reg16 Dst>
-static constexpr void pop_reg16(Sm83State& cpu)
+static constexpr void
+pop_reg16(Sm83State& cpu)
 {
     uint8_t high = cpu.bus.read_byte(cpu.reg.sp);
     ++cpu.reg.sp;
@@ -178,9 +189,10 @@ static constexpr void pop_reg16(Sm83State& cpu)
 }
 
 template <enum Reg16 Dst>
-static constexpr void load_reg16_stack_offset(Sm83State& cpu)
+static constexpr void
+load_reg16_stack_offset(Sm83State& cpu)
 {
-    int8_t offset = static_cast<int8_t>(cpu.bus.read_byte(cpu.reg.pc++));
+    int8_t offset = static_cast<int8_t>(cpu.load_imm8());
     uint16_t result = static_cast<uint16_t>(cpu.reg.sp + offset);
     cpu.reg.store_reg16<Dst>(result);
     cpu.reg.clear_flag<Flag::Z>();
@@ -194,7 +206,8 @@ enum class UseCarry {
     Yes,
 };
 
-static inline constexpr void add_update_flags(
+static inline constexpr void
+add_update_flags(
     Sm83State& cpu, const uint8_t result, const uint8_t operand1, const uint8_t operand2)
 {
     cpu.reg.conditional_flag_toggle<Flag::Z>(result == 0);
@@ -204,7 +217,8 @@ static inline constexpr void add_update_flags(
 }
 
 template <enum Reg8 Src, enum UseCarry C>
-static constexpr void add_reg8(Sm83State& cpu)
+static constexpr void
+add_reg8(Sm83State& cpu)
 {
     uint8_t operand1 = cpu.reg.load_reg8<Reg8::A>();
     uint8_t operand2 = 0;
@@ -219,14 +233,15 @@ static constexpr void add_reg8(Sm83State& cpu)
 }
 
 template <enum UseCarry C>
-static constexpr void add_imm8(Sm83State& cpu)
+static constexpr void
+add_imm8(Sm83State& cpu)
 {
     uint8_t operand1 = cpu.reg.load_reg8<Reg8::A>();
     uint8_t operand2 = 0;
     if constexpr (C == UseCarry::Yes)
-        operand2 = cpu.bus.read_byte(cpu.reg.pc++) + cpu.reg.is_flag_set<Flag::C>();
+        operand2 = cpu.load_imm8() + cpu.reg.is_flag_set<Flag::C>();
     else
-        operand2 = cpu.bus.read_byte(cpu.reg.pc++);
+        operand2 = cpu.load_imm8();
 
     uint8_t result = operand1 + operand2;
     cpu.reg.store_reg8<Reg8::A>(result);
@@ -234,7 +249,8 @@ static constexpr void add_imm8(Sm83State& cpu)
 }
 
 template <enum UseCarry C>
-static constexpr void add_reg16_hl_indirect(Sm83State& cpu)
+static constexpr void
+add_reg16_hl_indirect(Sm83State& cpu)
 {
     uint8_t operand1 = cpu.reg.load_reg8<Reg8::A>();
     uint8_t operand2 = 0;
@@ -248,7 +264,8 @@ static constexpr void add_reg16_hl_indirect(Sm83State& cpu)
     add_update_flags(cpu, result, operand1, operand2);
 }
 
-static inline constexpr void sub_update_flags(
+static inline constexpr void
+sub_update_flags(
     Sm83State& cpu, const uint8_t result, const uint8_t operand1, const uint8_t operand2)
 {
     cpu.reg.conditional_flag_toggle<Flag::Z>(result == 0);
@@ -258,7 +275,8 @@ static inline constexpr void sub_update_flags(
 }
 
 template <enum Reg8 Src, enum UseCarry C>
-static constexpr void sub_reg8(Sm83State& cpu)
+static constexpr void
+sub_reg8(Sm83State& cpu)
 {
     uint8_t operand1 = cpu.reg.load_reg8<Reg8::A>();
     uint8_t operand2 = 0;
@@ -273,14 +291,15 @@ static constexpr void sub_reg8(Sm83State& cpu)
 }
 
 template <enum UseCarry C>
-static constexpr void sub_imm8(Sm83State& cpu)
+static constexpr void
+sub_imm8(Sm83State& cpu)
 {
     uint8_t operand1 = cpu.reg.load_reg8<Reg8::A>();
     uint8_t operand2 = 0;
     if constexpr (C == UseCarry::Yes)
-        operand2 = cpu.bus.read_byte(cpu.reg.pc++) - cpu.reg.is_flag_set<Flag::C>();
+        operand2 = cpu.load_imm8() - cpu.reg.is_flag_set<Flag::C>();
     else
-        operand2 = cpu.bus.read_byte(cpu.reg.pc++);
+        operand2 = cpu.load_imm8();
 
     uint8_t result = operand1 - operand2;
     cpu.reg.store_reg8<Reg8::A>(result);
@@ -288,7 +307,8 @@ static constexpr void sub_imm8(Sm83State& cpu)
 }
 
 template <enum UseCarry C>
-static constexpr void sub_reg16_hl_indirect(Sm83State& cpu)
+static constexpr void
+sub_reg16_hl_indirect(Sm83State& cpu)
 {
     uint8_t operand1 = cpu.reg.load_reg8<Reg8::A>();
     uint8_t operand2 = 0;
@@ -302,7 +322,8 @@ static constexpr void sub_reg16_hl_indirect(Sm83State& cpu)
     sub_update_flags(cpu, result, operand1, operand2);
 }
 
-static inline constexpr void and_update_flags(Sm83State& cpu, const uint8_t result)
+static inline constexpr void
+and_update_flags(Sm83State& cpu, const uint8_t result)
 {
     cpu.reg.conditional_flag_toggle<Flag::Z>(result == 0);
     cpu.reg.clear_flag<Flag::N>();
@@ -311,23 +332,26 @@ static inline constexpr void and_update_flags(Sm83State& cpu, const uint8_t resu
 }
 
 template <enum Reg8 Src>
-static constexpr void and_reg8(Sm83State& cpu)
+static constexpr void
+and_reg8(Sm83State& cpu)
 {
     uint8_t result = cpu.reg.load_reg8<Reg8::A>() & cpu.reg.load_reg8<Src>();
     cpu.reg.store_reg8<Reg8::A>(result);
     and_update_flags(cpu, result);
 }
 
-static void and_imm8(Sm83State& cpu)
+static void
+and_imm8(Sm83State& cpu)
 {
     uint8_t operand1 = cpu.reg.load_reg8<Reg8::A>();
-    uint8_t operand2 = cpu.bus.read_byte(cpu.reg.pc++);
+    uint8_t operand2 = cpu.load_imm8();
     uint8_t result = operand1 & operand2;
     cpu.reg.store_reg8<Reg8::A>(result);
     and_update_flags(cpu, result);
 }
 
-static void and_reg16_hl_indirect(Sm83State& cpu)
+static void
+and_reg16_hl_indirect(Sm83State& cpu)
 {
     uint8_t operand1 = cpu.reg.load_reg8<Reg8::A>();
     uint8_t operand2 = cpu.reg.load_reg16_indirect<Reg16::HL>(cpu.bus);
@@ -336,7 +360,8 @@ static void and_reg16_hl_indirect(Sm83State& cpu)
     and_update_flags(cpu, result);
 }
 
-static inline constexpr void or_xor_update_flags(Sm83State& cpu, const uint8_t result)
+static inline constexpr void
+or_xor_update_flags(Sm83State& cpu, const uint8_t result)
 {
     cpu.reg.conditional_flag_toggle<Flag::Z>(result == 0);
     cpu.reg.clear_flag<Flag::N>();
@@ -345,23 +370,26 @@ static inline constexpr void or_xor_update_flags(Sm83State& cpu, const uint8_t r
 }
 
 template <enum Reg8 Src>
-static constexpr void or_reg8(Sm83State& cpu)
+static constexpr void
+or_reg8(Sm83State& cpu)
 {
     uint8_t result = cpu.reg.load_reg8<Reg8::A>() | cpu.reg.load_reg8<Src>();
     cpu.reg.store_reg8<Reg8::A>(result);
     or_xor_update_flags(cpu, result);
 }
 
-static void or_imm8(Sm83State& cpu)
+static void
+or_imm8(Sm83State& cpu)
 {
     uint8_t operand1 = cpu.reg.load_reg8<Reg8::A>();
-    uint8_t operand2 = cpu.bus.read_byte(cpu.reg.pc++);
+    uint8_t operand2 = cpu.load_imm8();
     uint8_t result = operand1 | operand2;
     cpu.reg.store_reg8<Reg8::A>(result);
     or_xor_update_flags(cpu, result);
 }
 
-static void or_reg16_hl_indirect(Sm83State& cpu)
+static void
+or_reg16_hl_indirect(Sm83State& cpu)
 {
     uint8_t operand1 = cpu.reg.load_reg8<Reg8::A>();
     uint8_t operand2 = cpu.bus.read_byte(cpu.reg.load_reg16_indirect<Reg16::HL>(cpu.bus));
@@ -371,23 +399,26 @@ static void or_reg16_hl_indirect(Sm83State& cpu)
 }
 
 template <enum Reg8 Src>
-static constexpr void xor_reg8(Sm83State& cpu)
+static constexpr void
+xor_reg8(Sm83State& cpu)
 {
     uint8_t result = cpu.reg.load_reg8<Reg8::A>() ^ cpu.reg.load_reg8<Src>();
     cpu.reg.store_reg8<Reg8::A>(result);
     or_xor_update_flags(cpu, result);
 }
 
-static void xor_imm8(Sm83State& cpu)
+static void
+xor_imm8(Sm83State& cpu)
 {
     uint8_t operand1 = cpu.reg.load_reg8<Reg8::A>();
-    uint8_t operand2 = cpu.bus.read_byte(cpu.reg.pc++);
+    uint8_t operand2 = cpu.load_imm8();
     uint8_t result = operand1 ^ operand2;
     cpu.reg.store_reg8<Reg8::A>(result);
     or_xor_update_flags(cpu, result);
 }
 
-static void xor_reg16_hl_indirect(Sm83State& cpu)
+static void
+xor_reg16_hl_indirect(Sm83State& cpu)
 {
     uint8_t operand1 = cpu.reg.load_reg8<Reg8::A>();
     uint8_t operand2 = cpu.reg.load_reg16_indirect<Reg16::HL>(cpu.bus);
@@ -397,7 +428,8 @@ static void xor_reg16_hl_indirect(Sm83State& cpu)
 }
 
 template <enum Reg8 Src>
-static void cp_reg8(Sm83State& cpu)
+static void
+cp_reg8(Sm83State& cpu)
 {
     uint8_t operand1 = cpu.reg.load_reg8<Reg8::A>();
     uint8_t operand2 = cpu.reg.load_reg8<Src>();
@@ -405,15 +437,17 @@ static void cp_reg8(Sm83State& cpu)
     sub_update_flags(cpu, result, operand1, operand2);
 }
 
-static void cp_imm8(Sm83State& cpu)
+static void
+cp_imm8(Sm83State& cpu)
 {
     uint8_t operand1 = cpu.reg.load_reg8<Reg8::A>();
-    uint8_t operand2 = cpu.bus.read_byte(cpu.reg.pc++);
+    uint8_t operand2 = cpu.load_imm8();
     uint8_t result = operand1 - operand2;
     sub_update_flags(cpu, result, operand1, operand2);
 }
 
-static void cp_reg16_hl_indirect(Sm83State& cpu)
+static void
+cp_reg16_hl_indirect(Sm83State& cpu)
 {
     uint8_t operand1 = cpu.reg.load_reg8<Reg8::A>();
     uint8_t operand2 = cpu.reg.load_reg16_indirect<Reg16::HL>(cpu.bus);
@@ -421,7 +455,8 @@ static void cp_reg16_hl_indirect(Sm83State& cpu)
     sub_update_flags(cpu, result, operand1, operand2);
 }
 
-static inline constexpr void inc_update_flags(Sm83State& cpu, const uint8_t result, const uint8_t operand1)
+static inline constexpr void
+inc_update_flags(Sm83State& cpu, const uint8_t result, const uint8_t operand1)
 {
     cpu.reg.conditional_flag_toggle<Flag::Z>(result == 0);
     cpu.reg.clear_flag<Flag::N>();
@@ -429,7 +464,8 @@ static inline constexpr void inc_update_flags(Sm83State& cpu, const uint8_t resu
 }
 
 template <enum Reg8 Dst>
-static constexpr void inc_reg8(Sm83State& cpu)
+static constexpr void
+inc_reg8(Sm83State& cpu)
 {
     uint8_t operand = cpu.reg.load_reg8<Dst>();
     uint8_t result = operand + 1;
@@ -437,7 +473,8 @@ static constexpr void inc_reg8(Sm83State& cpu)
     inc_update_flags(cpu, result, operand);
 }
 
-static constexpr void inc_reg16_hl_indirect(Sm83State& cpu)
+static constexpr void
+inc_reg16_hl_indirect(Sm83State& cpu)
 {
     uint8_t operand = cpu.reg.load_reg16_indirect<Reg16::HL>(cpu.bus);
     uint8_t result = operand + 1;
@@ -445,7 +482,8 @@ static constexpr void inc_reg16_hl_indirect(Sm83State& cpu)
     inc_update_flags(cpu, result, operand);
 }
 
-static inline constexpr void dec_update_flags(Sm83State& cpu, const uint8_t result, const uint8_t operand1)
+static inline constexpr void
+dec_update_flags(Sm83State& cpu, const uint8_t result, const uint8_t operand1)
 {
     cpu.reg.conditional_flag_toggle<Flag::Z>(result == 0);
     cpu.reg.clear_flag<Flag::N>();
@@ -453,7 +491,8 @@ static inline constexpr void dec_update_flags(Sm83State& cpu, const uint8_t resu
 }
 
 template <enum Reg8 Dst>
-static constexpr void dec_reg8(Sm83State& cpu)
+static constexpr void
+dec_reg8(Sm83State& cpu)
 {
     uint8_t operand = cpu.reg.load_reg8<Dst>();
     uint8_t result = operand - 1;
@@ -461,7 +500,8 @@ static constexpr void dec_reg8(Sm83State& cpu)
     dec_update_flags(cpu, result, operand);
 }
 
-static constexpr void dec_reg16_hl_indirect(Sm83State& cpu)
+static constexpr void
+dec_reg16_hl_indirect(Sm83State& cpu)
 {
     uint8_t operand = cpu.reg.load_reg16_indirect<Reg16::HL>(cpu.bus);
     uint8_t result = operand - 1;
@@ -469,28 +509,32 @@ static constexpr void dec_reg16_hl_indirect(Sm83State& cpu)
     dec_update_flags(cpu, result, operand);
 }
 
-static void complement_carry_flag(Sm83State& cpu)
+static void
+complement_carry_flag(Sm83State& cpu)
 {
     cpu.reg.clear_flag<Flag::N>();
     cpu.reg.clear_flag<Flag::H>();
     cpu.reg.toggle_flag<Flag::C>();
 }
 
-static void set_carry_flag(Sm83State& cpu)
+static void
+set_carry_flag(Sm83State& cpu)
 {
     cpu.reg.clear_flag<Flag::N>();
     cpu.reg.clear_flag<Flag::H>();
     cpu.reg.set_flag<Flag::C>();
 }
 
-static void complement_reg8_a(Sm83State& cpu)
+static void
+complement_reg8_a(Sm83State& cpu)
 {
     cpu.reg.store_reg8<Reg8::A>(~cpu.reg.load_reg8<Reg8::A>());
     cpu.reg.set_flag<Flag::N>();
     cpu.reg.set_flag<Flag::H>();
 }
 
-static void decimal_adjust_reg8_a(Sm83State& cpu)
+static void
+decimal_adjust_reg8_a(Sm83State& cpu)
 {
     uint8_t rega = cpu.reg.load_reg8<Reg8::A>();
     if (!cpu.reg.is_flag_set<Flag::N>() || rega > 0x99) {
@@ -506,6 +550,247 @@ static void decimal_adjust_reg8_a(Sm83State& cpu)
     cpu.reg.store_reg8<Reg8::A>(rega);
     cpu.reg.conditional_flag_toggle<Flag::Z>(rega == 0);
     cpu.reg.clear_flag<Flag::H>();
+}
+
+template <enum Reg16 Src>
+static constexpr void
+add_reg16_hl_reg16(Sm83State& cpu)
+{
+    uint16_t operand1 = cpu.reg.load_reg16<Reg16::HL>();
+    uint16_t operand2 = cpu.reg.load_reg16<Src>();
+    uint16_t result = operand1 + operand2;
+    cpu.reg.clear_flag<Flag::N>();
+    cpu.reg.conditional_flag_toggle<Flag::H>(is_half_carry<Operation::Add>(operand1, operand2));
+    cpu.reg.conditional_flag_toggle<Flag::C>(is_carry<Operation::Add>(result, operand1));
+}
+
+static void
+add_reg16_sp_offset(Sm83State& cpu)
+{
+    uint16_t operand1 = cpu.reg.sp;
+    int8_t operand2 = static_cast<int8_t>(cpu.load_imm8());
+    uint16_t result = static_cast<uint16_t>(operand1 + operand2);
+    cpu.reg.sp = result;
+    cpu.reg.clear_flag<Flag::Z>();
+    cpu.reg.clear_flag<Flag::N>();
+    cpu.reg.conditional_flag_toggle<Flag::H>(is_half_carry<Operation::Add>(operand1, operand2));
+    cpu.reg.conditional_flag_toggle<Flag::C>(is_carry<Operation::Add>(result, operand1));
+}
+
+static void
+jump_imm16(Sm83State& cpu)
+{
+    cpu.reg.pc = cpu.load_imm16();
+}
+
+static void
+jump_reg16_hl(Sm83State& cpu)
+{
+    cpu.reg.pc = cpu.reg.load_reg16<Reg16::HL>();
+}
+
+template <enum Condition C>
+static constexpr void
+jump_condition_imm16(Sm83State& cpu)
+{
+    uint16_t addr = cpu.load_imm16();
+    if (cpu.reg.is_condition_set<C>()) {
+        cpu.reg.pc = addr;
+        cpu.mcycles += 1;
+    }
+}
+
+static void
+jump_relative_imm8(Sm83State& cpu)
+{
+    int8_t offset = static_cast<int8_t>(cpu.load_imm8());
+    cpu.reg.pc = static_cast<uint8_t>(cpu.reg.pc + offset);
+}
+
+template <enum Condition C>
+static constexpr void
+jump_condition_relative_imm8(Sm83State& cpu)
+{
+    int8_t offset = static_cast<int8_t>(cpu.load_imm8());
+    if (cpu.reg.is_condition_set<C>()) {
+        cpu.reg.pc = static_cast<uint8_t>(cpu.reg.pc + offset);
+        cpu.mcycles += 1;
+    }
+}
+
+static void
+call_imm16(Sm83State& cpu)
+{
+    uint16_t addr = cpu.load_imm16();
+    --cpu.reg.sp;
+    cpu.bus.write_byte(cpu.reg.sp, cocoa::from_low(cpu.reg.pc));
+    --cpu.reg.sp;
+    cpu.bus.write_byte(cpu.reg.sp, cocoa::from_high(cpu.reg.pc));
+    cpu.reg.pc = addr;
+}
+
+template <enum Condition C>
+static void
+call_condition_imm16(Sm83State& cpu)
+{
+    uint16_t addr = cpu.load_imm16();
+    if (cpu.reg.is_condition_set<C>()) {
+        --cpu.reg.sp;
+        cpu.bus.write_byte(cpu.reg.sp, cocoa::from_low(cpu.reg.pc));
+        --cpu.reg.sp;
+        cpu.bus.write_byte(cpu.reg.sp, cocoa::from_high(cpu.reg.pc));
+        cpu.reg.pc = addr;
+        cpu.mcycles += 3;
+    }
+}
+
+static void
+return_no_condition(Sm83State& cpu)
+{
+    uint8_t high = cpu.bus.read_byte(cpu.reg.sp);
+    ++cpu.reg.sp;
+    uint8_t low = cpu.bus.read_byte(cpu.reg.sp);
+    ++cpu.reg.sp;
+    cpu.reg.pc = cocoa::from_pair(high, low);
+}
+
+template <enum Condition C>
+static void
+return_condition(Sm83State& cpu)
+{
+    if (cpu.reg.is_condition_set<C>()) {
+        uint8_t high = cpu.bus.read_byte(cpu.reg.sp);
+        ++cpu.reg.sp;
+        uint8_t low = cpu.bus.read_byte(cpu.reg.sp);
+        ++cpu.reg.sp;
+        cpu.reg.pc = cocoa::from_pair(high, low);
+        cpu.mcycles += 3;
+    }
+}
+
+static void
+return_interrupt(Sm83State& cpu)
+{
+        uint8_t high = cpu.bus.read_byte(cpu.reg.sp);
+        ++cpu.reg.sp;
+        uint8_t low = cpu.bus.read_byte(cpu.reg.sp);
+        ++cpu.reg.sp;
+        cpu.reg.pc = cocoa::from_pair(high, low);
+        cpu.ime = true;
+}
+
+template <uint8_t Vec>
+static constexpr void
+restart(Sm83State& cpu)
+{
+    --cpu.reg.sp;
+    cpu.bus.write_byte(cpu.reg.sp, cocoa::from_low(cpu.reg.pc));
+    --cpu.reg.sp;
+    cpu.bus.write_byte(cpu.reg.sp, cocoa::from_high(cpu.reg.pc));
+    cpu.reg.pc = cocoa::from_pair<uint16_t, uint8_t>(0x00, Vec);
+}
+
+template <enum Reg16 Dst>
+static constexpr void
+inc_reg16(Sm83State& cpu)
+{
+    cpu.reg.store_reg16<Dst>(cpu.reg.load_reg16<Dst>() + 1);
+}
+
+template <enum Reg16 Dst>
+static constexpr void
+dec_reg16(Sm83State& cpu)
+{
+    cpu.reg.store_reg16<Dst>(cpu.reg.load_reg16<Dst>() - 1);
+}
+
+static void
+enable_interrupt(Sm83State& cpu)
+{
+    cpu.ime = true;
+}
+
+static void
+halt(Sm83State& cpu)
+{
+    cpu.mode = ExecutionMode::Halted;
+}
+
+static void
+stop(Sm83State& cpu)
+{
+    cpu.mode = ExecutionMode::Stopped;
+}
+
+static void
+disable_interrupt(Sm83State& cpu)
+{
+    cpu.ime = false;
+}
+
+enum class Direction {
+    Left,
+    Right,
+};
+
+template <enum Direction D, enum Reg8 Dst>
+static constexpr void
+rotate(Sm83State& cpu)
+{
+    uint8_t carry = 0;
+    uint8_t result = 0;
+
+    if constexpr (D == Direction::Left) {
+        carry = cpu.reg.load_reg8<Dst>() & 0x80 >> 8;
+        result = static_cast<uint8_t>((cpu.reg.load_reg8<Dst>() << 1) | (cpu.reg.load_reg8<Dst>() >> 7));
+    } else {
+        carry = cpu.reg.load_reg8<Dst>() & 0x01;
+        result = static_cast<uint8_t>((cpu.reg.load_reg8<Dst>() >> 1) | (cpu.reg.load_reg8<Dst>() << 7));
+    }
+
+    if constexpr (Dst == Reg8::A) {
+        cpu.reg.clear_flag<Flag::Z>();
+    } else {
+        cpu.reg.conditional_flag_toggle<Flag::Z>(result == 0);
+    }
+
+    cpu.reg.clear_flag<Flag::N>();
+    cpu.reg.clear_flag<Flag::H>();
+    cpu.reg.conditional_flag_toggle<Flag::C>(carry == 1);
+}
+
+template <enum Direction D, enum Reg8 Dst>
+static constexpr void
+rotate_carry(Sm83State& cpu)
+{
+    uint8_t carry = 0;
+    uint8_t result = 0;
+
+    if constexpr (D == Direction::Left) {
+        carry = cpu.reg.load_reg8<Dst>() & 0x80 >> 8;
+        result = static_cast<uint8_t>(cpu.reg.load_reg8<Dst>() << 1 | cpu.reg.is_flag_set<Flag::C>());
+    } else {
+        carry = cpu.reg.load_reg8<Dst>() & 0x01;
+        result = static_cast<uint8_t>((cpu.reg.load_reg8<Dst>() >> 1) | (cpu.reg.is_flag_set<Flag::C>() << 7));
+    }
+
+    if constexpr (Dst == Reg8::A) {
+        cpu.reg.clear_flag<Flag::Z>();
+    } else {
+        cpu.reg.conditional_flag_toggle<Flag::Z>(result == 0);
+    }
+
+    cpu.reg.conditional_flag_toggle<Flag::Z>(result == 0);
+    cpu.reg.clear_flag<Flag::N>();
+    cpu.reg.clear_flag<Flag::H>();
+    cpu.reg.conditional_flag_toggle<Flag::C>(carry == 1);
+}
+
+static void
+nop(Sm83State& cpu)
+{
+    // Do nothing other than suppress warning about unused parameter.
+    (void)cpu;
 }
 
 enum Opcode : uint8_t {
@@ -689,6 +974,14 @@ enum Opcode : uint8_t {
     IncRegL = 0x2C,
     IncRegA = 0x3C,
     IncIndirHL = 0x34,
+    IncRegBC = 0x03,
+    IncRegDE = 0x13,
+    IncRegHL = 0x23,
+    IncRegSP = 0x33,
+    DecRegBC = 0x0B,
+    DecRegDE = 0x1B,
+    DecRegHL = 0x2B,
+    DecRegSP = 0x3B,
     DecRegB = 0x05,
     DecRegC = 0x0D,
     DecRegD = 0x15,
@@ -697,14 +990,70 @@ enum Opcode : uint8_t {
     DecRegL = 0x2D,
     DecRegA = 0x3D,
     DecIndirHL = 0x35,
+    AddRegHLRegBC = 0x09,
+    AddRegHLRegDE = 0x19,
+    AddRegHLRegHL = 0x29,
+    AddRegHLRegSP = 0x39,
+    AddRegSPOffset = 0xE8,
     ComplementCarry = 0x3F,
     SetCarry = 0x37,
     DecimalAdjustRegA = 0x27,
     ComplementRegA = 0x2F,
+    JumpImm16 = 0xC3,
+    JumpRegHL = 0xE9,
+    JumpNZImm16 = 0xC2,
+    JumpNCImm16 = 0xD2,
+    JumpZImm16 = 0xCA,
+    JumpCImm16 = 0xDA,
+    JumpRelImm8 = 0x18,
+    JumpRelNZImm8 = 0x20,
+    JumpRelNCImm8 = 0x30,
+    JumpRelZImm8 = 0x28,
+    JumpRelCImm8 = 0x38,
+    CallImm16 = 0xCD,
+    CallNZImm16 = 0xC4,
+    CallNCImm16 = 0xD4,
+    CallZImm16 = 0xCC,
+    CallCImm16 = 0xDC,
+    Return = 0xC9,
+    ReturnNZ = 0xC0,
+    ReturnNC = 0xD0,
+    ReturnZ = 0xC8,
+    ReturnC = 0xD8,
+    ReturnIR = 0xD9,
+    Restart00 = 0xC7,
+    Restart10 = 0xD7,
+    Restart20 = 0xE7,
+    Restart30 = 0xF7,
+    Restart08 = 0xCF,
+    Restart18 = 0xDF,
+    Restart28 = 0xEF,
+    Restart38 = 0xFF,
+    Rlca = 0x07,
+    Rrca = 0x0F,
+    Rla = 0x17,
+    Rra = 0x1F,
+    Nop = 0x00,
+    Halt = 0x76,
+    Stop = 0x10,
+    DisableIR = 0xF3, 
+    EnableIR = 0xFB,
     CBPrefix = 0xCB,
+    Illegal00 = 0xD3,
+    Illegal01 = 0xE3,
+    Illegal02 = 0xE4,
+    Illegal03 = 0xF4,
+    Illegal04 = 0xDB,
+    Illegal05 = 0xEB,
+    Illegal06 = 0xEC,
+    Illegal07 = 0xFC,
+    Illegal08 = 0xDD,
+    Illegal09 = 0xED,
+    Illegal10 = 0xFD,
 };
 
-constexpr std::array<Instruction, 256> new_no_prefix_instr()
+constexpr std::array<Instruction, 256>
+new_no_prefix_instr()
 {
     std::array<Instruction, 256> instr = {};
     instr[Opcode::LoadRegBRegB] = Instruction { "LD B, B", 1, 1, load_reg8_reg8<Reg8::B, Reg8::B> };
@@ -945,14 +1294,90 @@ constexpr std::array<Instruction, 256> new_no_prefix_instr()
     instr[Opcode::DecRegL] = Instruction { "DEC L", 1, 1, dec_reg8<Reg8::L> };
     instr[Opcode::DecRegA] = Instruction { "DEC A", 1, 1, dec_reg8<Reg8::A> };
     instr[Opcode::DecIndirHL] = Instruction { "DEC [HL]", 3, 1, dec_reg16_hl_indirect };
+    instr[Opcode::IncRegBC] = Instruction { "INC BC", 2, 1, inc_reg16<Reg16::BC> };
+    instr[Opcode::IncRegDE] = Instruction { "INC DE", 2, 1, inc_reg16<Reg16::DE> };
+    instr[Opcode::IncRegHL] = Instruction { "INC HL", 2, 1, inc_reg16<Reg16::HL> };
+    instr[Opcode::IncRegSP] = Instruction { "INC SP", 2, 1, inc_reg16<Reg16::SP> };
+    instr[Opcode::DecRegBC] = Instruction { "DEC BC", 2, 1, dec_reg16<Reg16::BC> };
+    instr[Opcode::DecRegDE] = Instruction { "DEC DE", 2, 1, dec_reg16<Reg16::DE> };
+    instr[Opcode::DecRegHL] = Instruction { "DEC HL", 2, 1, dec_reg16<Reg16::HL> };
+    instr[Opcode::DecRegSP] = Instruction { "DEC SP", 2, 1, dec_reg16<Reg16::SP> };
     instr[Opcode::ComplementCarry] = Instruction { "CCF", 1, 1, complement_carry_flag };
     instr[Opcode::SetCarry] = Instruction { "SCF", 1, 1, set_carry_flag };
     instr[Opcode::DecimalAdjustRegA] = Instruction { "DAA", 1, 1, decimal_adjust_reg8_a };
     instr[Opcode::ComplementRegA] = Instruction { "CPL", 1, 1, complement_reg8_a };
+    instr[Opcode::JumpImm16] = Instruction { "JP n16", 4, 3, jump_imm16 };
+    instr[Opcode::JumpRegHL] = Instruction { "JP HL", 1, 1, jump_reg16_hl };
+    instr[Opcode::JumpNZImm16] =
+        Instruction { "JP NZ, n16", 3, 3, jump_condition_imm16<Condition::NZ> };
+    instr[Opcode::JumpNCImm16] =
+        Instruction { "JP NC, n16", 3, 3, jump_condition_imm16<Condition::NC> };
+    instr[Opcode::JumpZImm16] =
+        Instruction { "JP Z, n16", 3, 3, jump_condition_imm16<Condition::Z> };
+    instr[Opcode::JumpCImm16] =
+        Instruction { "JP C, n16", 3, 3, jump_condition_imm16<Condition::C> };
+    instr[Opcode::JumpRelImm8] = Instruction { "JP e8", 3, 2, jump_relative_imm8 };
+    instr[Opcode::JumpRelNZImm8] =
+        Instruction { "JP NZ, e8", 2, 2, jump_condition_relative_imm8<Condition::NZ> };
+    instr[Opcode::JumpRelNCImm8] =
+        Instruction { "JP NC, e8", 2, 2, jump_condition_relative_imm8<Condition::NC> };
+    instr[Opcode::JumpRelZImm8] =
+        Instruction { "JP Z, e8", 2, 2, jump_condition_relative_imm8<Condition::Z> };
+    instr[Opcode::JumpRelCImm8] =
+        Instruction { "JP C, e8", 2, 2, jump_condition_relative_imm8<Condition::C> };
+    instr[Opcode::CallImm16] = Instruction { "CALL n16", 6, 3, call_imm16 };
+    instr[Opcode::CallNZImm16] =
+        Instruction { "CALL NZ, n16", 3, 3, call_condition_imm16<Condition::NZ> };
+    instr[Opcode::CallNCImm16] =
+        Instruction { "CALL NC, n16", 3, 3, call_condition_imm16<Condition::NC> };
+    instr[Opcode::CallZImm16] =
+        Instruction { "CALL Z, n16", 3, 3, call_condition_imm16<Condition::Z> };
+    instr[Opcode::CallCImm16] =
+        Instruction { "CALL C, n16", 3, 3, call_condition_imm16<Condition::C> };
+    instr[Opcode::Return] = Instruction { "RET", 4, 1, return_no_condition };
+    instr[Opcode::ReturnNZ] = Instruction { "RET NZ", 2, 1, return_condition<Condition::NZ> };
+    instr[Opcode::ReturnNC] = Instruction { "RET NC", 2, 1, return_condition<Condition::NC> };
+    instr[Opcode::ReturnZ] = Instruction { "RET Z", 2, 1, return_condition<Condition::Z> };
+    instr[Opcode::ReturnC] = Instruction { "RET C", 2, 1, return_condition<Condition::C> };
+    instr[Opcode::ReturnIR] = Instruction { "RETI", 4, 1, return_interrupt };
+    instr[Opcode::Restart00] = Instruction { "RST 00", 4, 1, restart<0x00> };
+    instr[Opcode::Restart10] = Instruction { "RST 10", 4, 1, restart<0x10> };
+    instr[Opcode::Restart20] = Instruction { "RST 20", 4, 1, restart<0x20> };
+    instr[Opcode::Restart30] = Instruction { "RST 30", 4, 1, restart<0x30> };
+    instr[Opcode::Restart08] = Instruction { "RST 08", 4, 1, restart<0x08> };
+    instr[Opcode::Restart18] = Instruction { "RST 18", 4, 1, restart<0x18> };
+    instr[Opcode::Restart28] = Instruction { "RST 28", 4, 1, restart<0x28> };
+    instr[Opcode::Restart38] = Instruction { "RST 38", 4, 1, restart<0x38> };
+    instr[Opcode::AddRegHLRegBC] = Instruction { "ADD HL, BC", 2, 1, add_reg16_hl_reg16<Reg16::BC> };
+    instr[Opcode::AddRegHLRegDE] = Instruction { "ADD HL, DE", 2, 1, add_reg16_hl_reg16<Reg16::DE> };
+    instr[Opcode::AddRegHLRegHL] = Instruction { "ADD HL, HL", 2, 1, add_reg16_hl_reg16<Reg16::HL> };
+    instr[Opcode::AddRegHLRegSP] = Instruction { "ADD HL, SP", 2, 1, add_reg16_hl_reg16<Reg16::SP> };
+    instr[Opcode::AddRegSPOffset] = Instruction { "ADD SP, e8", 4, 2, add_reg16_sp_offset };
+    instr[Opcode::EnableIR] = Instruction { "EI", 1, 1, enable_interrupt };
+    instr[Opcode::DisableIR] = Instruction { "DI", 1, 1, disable_interrupt };
+    instr[Opcode::Nop] = Instruction { "NOP", 1, 1, nop };
+    instr[Opcode::Halt] = Instruction { "HALT", 1, 1, halt };
+    instr[Opcode::Stop] = Instruction { "STOP", 1, 1, stop };
+    instr[Opcode::Rlca] = Instruction { "RLCA", 1, 1, rotate_carry<Direction::Left, Reg8::A> };
+    instr[Opcode::Rrca] = Instruction { "RRCA", 1, 1, rotate_carry<Direction::Right, Reg8::A> };
+    instr[Opcode::Rla] = Instruction { "RLA", 1, 1, rotate<Direction::Left, Reg8::A> };
+    instr[Opcode::Rra] = Instruction { "RRA", 1, 1, rotate<Direction::Right, Reg8::A> };
+    instr[Opcode::Illegal00] = Instruction { "???", 0, 1, nullptr };
+    instr[Opcode::Illegal01] = Instruction { "???", 0, 1, nullptr };
+    instr[Opcode::Illegal02] = Instruction { "???", 0, 1, nullptr };
+    instr[Opcode::Illegal03] = Instruction { "???", 0, 1, nullptr };
+    instr[Opcode::Illegal04] = Instruction { "???", 0, 1, nullptr };
+    instr[Opcode::Illegal05] = Instruction { "???", 0, 1, nullptr };
+    instr[Opcode::Illegal06] = Instruction { "???", 0, 1, nullptr };
+    instr[Opcode::Illegal07] = Instruction { "???", 0, 1, nullptr };
+    instr[Opcode::Illegal08] = Instruction { "???", 0, 1, nullptr };
+    instr[Opcode::Illegal09] = Instruction { "???", 0, 1, nullptr };
+    instr[Opcode::Illegal10] = Instruction { "???", 0, 1, nullptr };
     return instr;
 }
 
-constexpr std::array<Instruction, 256> new_cb_prefix_instr()
+constexpr std::array<Instruction, 256>
+new_cb_prefix_instr()
 {
     std::array<Instruction, 256> instr = {};
     return instr;
@@ -965,6 +1390,50 @@ Sm83State::Sm83State(MemoryBus& memory)
 {
 }
 
+uint8_t
+Sm83State::load_imm8()
+{
+    return bus.read_byte(reg.pc++);
+}
+
+uint8_t
+Sm83State::load_imm8_hram_indirect()
+{
+    return bus.read_byte(cocoa::from_pair<uint16_t, uint8_t>(0xFF, load_imm8()));
+}
+
+void
+Sm83State::store_imm8_hram_indirect(const uint8_t value)
+{
+    bus.write_byte(cocoa::from_pair<uint16_t, uint8_t>(0xFF, load_imm8()), value);
+}
+
+uint16_t
+Sm83State::load_imm16()
+{
+    uint16_t imm16 = bus.read_word(reg.pc);
+    reg.pc += 2;
+    return imm16;
+}
+
+uint8_t
+Sm83State::load_imm16_indirect()
+{
+    return bus.read_byte(load_imm16());
+}
+
+void
+Sm83State::store_imm16_indirect(const uint8_t value)
+{
+    bus.write_byte(load_imm16(), value);
+}
+
+void
+Sm83State::store_imm16_indirect(const uint16_t value)
+{
+    bus.write_word(load_imm16(), value);
+}
+
 Sm83::Sm83(std::shared_ptr<spdlog::logger> log, MemoryBus& memory)
     : m_no_prefix_instr { new_no_prefix_instr() }
     , m_cb_prefix_instr { new_cb_prefix_instr() }
@@ -973,7 +1442,8 @@ Sm83::Sm83(std::shared_ptr<spdlog::logger> log, MemoryBus& memory)
 {
 }
 
-void Sm83::step()
+void
+Sm83::step()
 {
     uint8_t opcode = m_state.bus.read_byte(m_state.reg.pc++);
     Instruction instr = {};
@@ -998,12 +1468,20 @@ void Sm83::step()
     m_state.mcycles += instr.mcycles;
 }
 
-size_t Sm83::mcycles() const { return m_state.mcycles; }
+size_t
+Sm83::mcycles() const
+{
+    return m_state.mcycles;
+}
 
 IllegalOpcode::IllegalOpcode(std::string message)
     : m_message(message)
 {
 }
 
-const char* IllegalOpcode::what() const noexcept { return m_message.c_str(); }
+const char*
+IllegalOpcode::what() const noexcept
+{
+    return m_message.c_str();
+}
 } // namespace cocoa::gb
