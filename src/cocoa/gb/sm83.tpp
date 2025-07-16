@@ -8,40 +8,57 @@ namespace cocoa::gb {
 template <enum Reg8 R>
 [[nodiscard]]
 constexpr uint8_t
-RegisterFile::load_reg8() const
+Sm83State::load_reg8() const
 {
-    return regs[cocoa::from_enum(R)];
-}
-
-template <enum Reg8 R>
-[[nodiscard]]
-constexpr uint8_t
-RegisterFile::load_reg8_hram_indirect(const MemoryBus& bus) const
-{
-    return bus.read_byte(cocoa::from_pair<uint16_t, uint8_t>(0xFF, load_reg8<R>()));
+    if constexpr (R == Reg8::B)
+        return regs[RegIndex::B];
+    if constexpr (R == Reg8::C)
+        return regs[RegIndex::C];
+    if constexpr (R == Reg8::IndirHramC)
+        return bus.read_byte(cocoa::from_pair<uint16_t, uint8_t>(0xFF, regs[RegIndex::C]));
+    if constexpr (R == Reg8::D)
+        return regs[RegIndex::D];
+    if constexpr (R == Reg8::E)
+        return regs[RegIndex::E];
+    if constexpr (R == Reg8::H)
+        return regs[RegIndex::H];
+    if constexpr (R == Reg8::L)
+        return regs[RegIndex::L];
+    if constexpr (R == Reg8::IndirHL)
+        return bus.read_byte(load_reg16<Reg16::HL>());
+    if constexpr (R == Reg8::A)
+        return regs[RegIndex::A];
 }
 
 template <enum Reg8 R>
 constexpr void
-RegisterFile::store_reg8(const uint8_t value)
+Sm83State::store_reg8(const uint8_t value)
 {
-    regs[cocoa::from_enum(R)] = value;
-}
-
-template <enum Reg8 R>
-constexpr void
-RegisterFile::store_reg8_hram_indirect(MemoryBus& bus, const uint8_t value)
-{
-    bus.write_byte(cocoa::from_pair<uint16_t, uint8_t>(0xFF, load_reg8<R>()), value);
+    if constexpr (R == Reg8::B)
+        regs[RegIndex::B] = value;
+    if constexpr (R == Reg8::C)
+        regs[RegIndex::C] = value;
+    if constexpr (R == Reg8::IndirHramC)
+        bus.write_byte(cocoa::from_pair<uint16_t, uint8_t>(0xFF, regs[RegIndex::C]), value);
+    if constexpr (R == Reg8::D)
+        regs[RegIndex::D] = value;
+    if constexpr (R == Reg8::E)
+        regs[RegIndex::E] = value;
+    if constexpr (R == Reg8::H)
+        regs[RegIndex::H] = value;
+    if constexpr (R == Reg8::L)
+        regs[RegIndex::L] = value;
+    if constexpr (R == Reg8::IndirHL)
+        bus.write_byte(load_reg16<Reg16::HL>(), value);
+    if constexpr (R == Reg8::A)
+        regs[RegIndex::A] = value;
 }
 
 template <enum Reg16 R>
 [[nodiscard]]
 constexpr uint16_t
-RegisterFile::load_reg16() const
+Sm83State::load_reg16() const
 {
-    if constexpr (R == Reg16::AF)
-        return cocoa::from_pair(load_reg8<Reg8::A>(), load_reg8<Reg8::F>());
     if constexpr (R == Reg16::BC)
         return cocoa::from_pair(load_reg8<Reg8::B>(), load_reg8<Reg8::C>());
     if constexpr (R == Reg16::DE)
@@ -52,45 +69,50 @@ RegisterFile::load_reg16() const
         return sp;
 }
 
-template <enum Reg16 R>
+template <enum Reg16Stack R>
 [[nodiscard]]
-constexpr uint8_t
-RegisterFile::load_reg16_indirect(const MemoryBus& bus) const
+constexpr uint16_t
+Sm83State::load_reg16_stack() const
 {
-    return bus.read_byte(load_reg16<R>());
+    if constexpr (R == Reg16Stack::BC)
+        return load_reg16<Reg16::BC>();
+    if constexpr (R == Reg16Stack::DE)
+        return load_reg16<Reg16::DE>();
+    if constexpr (R == Reg16Stack::HL)
+        return load_reg16<Reg16::HL>();
+    if constexpr (R == Reg16Stack::AF)
+        return cocoa::from_pair(regs[RegIndex::A], regs[RegIndex::F]);
 }
 
-template <enum Reg16 R>
+template <enum Reg16Indir R>
 [[nodiscard]]
 constexpr uint8_t
-RegisterFile::load_reg16_inc_indirect(const MemoryBus& bus)
+Sm83State::load_reg16_indir()
 {
-    uint16_t addr = load_reg16<R>();
-    uint8_t value = bus.read_byte(addr);
-    store_reg16<R>(addr + 1);
-    return value;
-}
+    if constexpr (R == Reg16Indir::BC)
+        return bus.read_byte(load_reg16<Reg16::BC>());
+    if constexpr (R == Reg16Indir::DE)
+        return bus.read_byte(load_reg16<Reg16::DE>());
 
-template <enum Reg16 R>
-[[nodiscard]]
-constexpr uint8_t
-RegisterFile::load_reg16_dec_indirect(const MemoryBus& bus)
-{
-    uint16_t addr = load_reg16<R>();
-    uint8_t value = bus.read_byte(addr);
-    store_reg16<R>(addr - 1);
-    return value;
+    if constexpr (R == Reg16Indir::HLI) {
+        uint16_t addr = load_reg16<Reg16::HL>();
+        uint8_t value = bus.read_byte(addr);
+        store_reg16<Reg16::HL>(addr + 1);
+        return value;
+    }
+
+    if constexpr (R == Reg16Indir::HLD) {
+        uint16_t addr = load_reg16<Reg16::HL>();
+        uint8_t value = bus.read_byte(addr);
+        store_reg16<Reg16::HL>(addr - 1);
+        return value;
+    }
 }
 
 template <enum Reg16 R>
 constexpr void
-RegisterFile::store_reg16(const uint16_t value)
+Sm83State::store_reg16(const uint16_t value)
 {
-    if constexpr (R == Reg16::AF) {
-        store_reg8<Reg8::A>(cocoa::from_high(value));
-        store_reg8<Reg8::F>(cocoa::from_low(value));
-    }
-
     if constexpr (R == Reg16::BC) {
         store_reg8<Reg8::B>(cocoa::from_high(value));
         store_reg8<Reg8::C>(cocoa::from_low(value));
@@ -110,80 +132,150 @@ RegisterFile::store_reg16(const uint16_t value)
         sp = value;
 }
 
-template <enum Reg16 R>
+template <enum Reg16Stack R>
 constexpr void
-RegisterFile::store_reg16_indirect(MemoryBus& bus, const uint8_t value)
+Sm83State::store_reg16_stack(const uint16_t value)
 {
-    bus.write_byte(load_reg16<R>(), value);
+    if constexpr (R == Reg16Stack::BC)
+        store_reg16<Reg16::BC>(value);
+    if constexpr (R == Reg16Stack::DE)
+        store_reg16<Reg16::DE>(value);
+    if constexpr (R == Reg16Stack::HL)
+        store_reg16<Reg16::HL>(value);
+
+    if constexpr (R == Reg16Stack::AF) {
+        regs[RegIndex::A] = cocoa::from_high(value);
+        regs[RegIndex::F] = cocoa::from_low(value);
+    }
 }
 
-template <enum Reg16 R>
+template <enum Reg16Indir R>
 constexpr void
-RegisterFile::store_reg16_inc_indirect(MemoryBus& bus, const uint8_t value)
+Sm83State::store_reg16_indir(const uint8_t value)
 {
-    uint16_t addr = load_reg16<R>();
-    bus.write_byte(addr++, value);
-    store_reg16<R>(addr);
+    if constexpr (R == Reg16Indir::BC)
+        bus.write_byte(load_reg16<Reg16::BC>(), value);
+    if constexpr (R == Reg16Indir::DE)
+        bus.write_byte(load_reg16<Reg16::DE>(), value);
+
+    if constexpr (R == Reg16Indir::HLI) {
+        uint16_t addr = load_reg16<Reg16::HL>();
+        bus.write_byte(addr, value);
+        store_reg16<Reg16::HL>(addr + 1);
+    }
+
+    if constexpr (R == Reg16Indir::HLD) {
+        uint16_t addr = load_reg16<Reg16::HL>();
+        bus.write_byte(addr, value);
+        store_reg16<Reg16::HL>(addr - 1);
+    }
 }
 
-template <enum Reg16 R>
-constexpr void
-RegisterFile::store_reg16_dec_indirect(MemoryBus& bus, const uint8_t value)
+template <enum Imm8 I>
+[[nodiscard]]
+constexpr uint8_t
+Sm83State::load_imm8()
 {
-    uint16_t addr = load_reg16<R>();
-    bus.write_byte(addr--, value);
-    store_reg16<R>(addr);
+    if constexpr (I == Imm8::Direct)
+        return bus.read_byte(pc++);
+    if constexpr (I == Imm8::IndirHram)
+        return bus.read_byte(cocoa::from_pair<uint16_t, uint8_t>(0xFF, bus.read_byte(pc++)));
+
+    if constexpr (I == Imm8::IndirAbsolute) {
+        uint8_t value = bus.read_byte(bus.read_word(pc));
+        pc += 2;
+        return value;
+    }
+}
+
+template <enum Imm8 I>
+constexpr void
+Sm83State::store_imm8(const uint8_t value)
+{
+    static_assert(I != Imm8::Direct, "Direct 8-bit addressing cannot write to memory bus");
+
+    if constexpr (I == Imm8::IndirHram)
+        bus.write_byte(cocoa::from_pair<uint16_t, uint8_t>(0xFF, bus.read_byte(pc++)), value);
+
+    if constexpr (I == Imm8::IndirAbsolute) {
+        bus.write_byte(bus.read_word(pc), value);
+        pc += 2;
+    }
+}
+
+template <enum Imm16 I>
+constexpr uint16_t
+Sm83State::load_imm16()
+{
+    static_assert(I != Imm16::IndirAbsolute, "Absolute 16-bit indirect load not used by SM83 ISA");
+    if constexpr (I == Imm16::Direct) {
+        uint16_t value = bus.read_word(pc);
+        pc += 2;
+        return value;
+    }
+}
+
+template <enum Imm16 I>
+constexpr void
+Sm83State::store_imm16(const uint16_t value)
+{
+    static_assert(I != Imm16::Direct, "Direct 16-bit addressing cannot write to memory bus ");
+    if constexpr (I == Imm16::IndirAbsolute) {
+        uint16_t addr = bus.read_word(pc);
+        pc += 2;
+        bus.write_word(addr, value);
+    }
 }
 
 template <enum Flag F>
 constexpr void
-RegisterFile::set_flag()
+Sm83State::set_flag()
 {
-    uint8_t flag = load_reg8<Reg8::F>();
+    uint8_t flag = regs[RegIndex::F];
     set_bit<uint8_t, cocoa::from_enum(F)>(flag);
-    store_reg8<Reg8::F>(flag);
+    regs[RegIndex::F] = flag;
 }
 
 template <enum Flag F>
 constexpr void
-RegisterFile::clear_flag()
+Sm83State::clear_flag()
 {
-    uint8_t flag = load_reg8<Reg8::F>();
+    uint8_t flag = regs[RegIndex::F];
     clear_bit<uint8_t, cocoa::from_enum(F)>(flag);
-    store_reg8<Reg8::F>(flag);
+    regs[RegIndex::F] = flag;
 }
 
 template <enum Flag F>
 constexpr void
-RegisterFile::conditional_flag_toggle(bool condition)
+Sm83State::conditional_flag_toggle(bool condition)
 {
-    uint8_t flag = load_reg8<Reg8::F>();
+    uint8_t flag = regs[RegIndex::F];
     conditional_bit_toggle<uint8_t, cocoa::from_enum(F)>(flag, condition);
-    store_reg8<Reg8::F>(flag);
+    regs[RegIndex::F] = flag;
 }
 
 template <enum Flag F>
 constexpr void
-RegisterFile::toggle_flag()
+Sm83State::toggle_flag()
 {
-    uint8_t flag = load_reg8<Reg8::F>();
+    uint8_t flag = regs[RegIndex::F];
     toggle_bit<uint8_t, cocoa::from_enum(F)>(flag);
-    store_reg8<Reg8::F>(flag);
+    regs[RegIndex::F] = flag;
 }
 
 template <enum Flag F>
 [[nodiscard]]
 constexpr bool
-RegisterFile::is_flag_set() const
+Sm83State::is_flag_set() const
 {
-    uint8_t flag = load_reg8<Reg8::F>();
+    uint8_t flag = regs[RegIndex::F];
     return is_bit_set<uint8_t, cocoa::from_enum(F)>(flag);
 }
 
 template <enum Condition C>
 [[nodiscard]]
 constexpr bool
-RegisterFile::is_condition_set() const
+Sm83State::is_condition_set() const
 {
     if constexpr (C == Condition::NZ)
         return !is_flag_set<Flag::Z>();

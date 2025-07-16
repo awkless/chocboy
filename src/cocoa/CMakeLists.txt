@@ -26,7 +26,9 @@ if(ENABLE_TESTS)
   enable_testing()
 
   add_executable(cocoa_tests)
-  target_sources(cocoa_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/utility_test.cpp")
+  target_sources(cocoa_tests
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/utility_test.cpp"
+            "${CMAKE_CURRENT_SOURCE_DIR}/gb/sm83_test.cpp")
   target_link_libraries(cocoa_tests
     PRIVATE cocoa::cocoa
             chocboy::dependencies
