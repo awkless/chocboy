@@ -19,6 +19,12 @@ MemoryBus::read_word(const uint16_t address) const
     return from_pair(read_byte(address), read_byte(address + 1));
 }
 
+uint8_t
+MemoryBus::read_io_reg(const IoMap reg) const
+{
+    return read_byte(from_enum(reg));
+}
+
 void
 MemoryBus::write_byte(const uint16_t address, const uint8_t value)
 {
@@ -31,4 +37,11 @@ MemoryBus::write_word(const uint16_t address, const uint16_t value)
     write_byte(address, from_high(value));
     write_byte(address + 1, from_low(value));
 }
+
+void
+MemoryBus::write_io_reg(const IoMap reg, const uint8_t value)
+{
+    write_byte(from_enum(reg), value);
+}
+
 } // namespace cocoa::gb

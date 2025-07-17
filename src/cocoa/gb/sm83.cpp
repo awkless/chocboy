@@ -12,6 +12,7 @@
 #include <spdlog/logger.h>
 
 #include "cocoa/gb/memory.hpp"
+#include "cocoa/gb/interrupt.hpp"
 #include "cocoa/gb/sm83.hpp"
 #include "cocoa/utility.hpp"
 
@@ -1889,31 +1890,76 @@ Sm83::Sm83(std::shared_ptr<spdlog::logger> log, MemoryBus& memory)
 {
 }
 
+static void
+handle_interrupts(Sm83State& cpu)
+{
+    if (cpu.ime) {
+        cpu.ime = false;
+        cpu.bus.write_byte(--cpu.sp, cocoa::from_low(cpu.pc));
+        cpu.bus.write_byte(--cpu.sp, cocoa::from_high(cpu.pc));
+
+        if (is_interrupt_pending<Interrupt::VBlank>(cpu.bus)) {
+            cpu.pc = cocoa::from_enum(InterruptVector::VBlank);
+            clear_interrupt<Interrupt::VBlank>(cpu.bus);
+        } else if (is_interrupt_pending<Interrupt::Lcd>(cpu.bus)) {
+            cpu.pc = cocoa::from_enum(InterruptVector::Lcd);
+            clear_interrupt<Interrupt::Lcd>(cpu.bus);
+        } else if (is_interrupt_pending<Interrupt::Timer>(cpu.bus)) {
+            cpu.pc = cocoa::from_enum(InterruptVector::Timer);
+            clear_interrupt<Interrupt::Timer>(cpu.bus);
+        } else if (is_interrupt_pending<Interrupt::Serial>(cpu.bus)) {
+            cpu.pc = cocoa::from_enum(InterruptVector::Serial);
+            clear_interrupt<Interrupt::Serial>(cpu.bus);
+        } else if (is_interrupt_pending<Interrupt::Joypad>(cpu.bus)) {
+            cpu.pc = cocoa::from_enum(InterruptVector::Joypad);
+            clear_interrupt<Interrupt::Joypad>(cpu.bus);
+        }
+
+        if (cpu.mode == Sm83Mode::Halted)
+            cpu.mode = Sm83Mode::Running;
+
+        cpu.mcycles += 5;
+        cpu.tstates += 20;
+    } else {
+        if (cpu.mode == Sm83Mode::Halted)
+            cpu.mode = Sm83Mode::Running;
+    }
+}
+
 void
 Sm83::step()
 {
-    uint8_t opcode = m_state.bus.read_byte(m_state.pc++);
-    Instruction instr = {};
+    handle_interrupts(m_state);
+    if (m_state.mode == Sm83Mode::Running) {
+        uint8_t opcode = m_state.bus.read_byte(m_state.pc++);
+        Instruction instr = {};
 
-    if (opcode == Misc::Prefix) {
-        opcode = m_state.bus.read_byte(m_state.pc++);
-        instr = m_cb_prefix_instr[opcode];
-        if (!instr.execute) {
-            throw IllegalOpcode(
-                fmt::format("Illegal opcode {0} (0xCB 0x{1:02X})", instr.mnemonic, opcode));
+        if (opcode == Misc::Prefix) {
+            opcode = m_state.bus.read_byte(m_state.pc++);
+            instr = m_cb_prefix_instr[opcode];
+            if (!instr.execute) {
+                throw IllegalOpcode(
+                    fmt::format("Illegal opcode {0} (0xCB 0x{1:02X})", instr.mnemonic, opcode));
+            }
+        } else {
+            instr = m_no_prefix_instr[opcode];
+            if (!instr.execute) {
+                throw IllegalOpcode(
+                    fmt::format("Illegal opcode {0} (0x{1:02X})", instr.mnemonic, opcode));
+            }
         }
-    } else {
-        instr = m_no_prefix_instr[opcode];
-        if (!instr.execute) {
-            throw IllegalOpcode(
-                fmt::format("Illegal opcode {0} (0x{1:02X})", instr.mnemonic, opcode));
-        }
+
+        m_log->debug("Execute {0} ({1} bytes)", instr.mnemonic, instr.length);
+        instr.execute(m_state);
+        m_state.mcycles += instr.mcycles;
+        m_state.tstates += instr.tstates;
+    } else if (m_state.mode == Sm83Mode::Halted) {
+        m_state.mcycles += 1;
+        m_state.tstates += 4;
+    } else if (m_state.mode == Sm83Mode::Stopped) {
+        m_state.mcycles += 1;
+        m_state.tstates += 4;
     }
-
-    m_log->debug("Execute {0} ({1} bytes)", instr.mnemonic, instr.length);
-    instr.execute(m_state);
-    m_state.mcycles += instr.mcycles;
-    m_state.tstates += instr.tstates;
 }
 
 size_t

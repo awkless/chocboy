@@ -5,10 +5,12 @@ add_library(cocoa)
 target_sources(cocoa
   PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}/gb/memory.hpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/gb/interrupt.hpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/gb/sm83.hpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/utility.hpp"
   PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/gb/memory.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/gb/interrupt.tpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/gb/sm83.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/gb/sm83.tpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/utility.tpp")
